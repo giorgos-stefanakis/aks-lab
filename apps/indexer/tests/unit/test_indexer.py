@@ -5,6 +5,7 @@ import json
 import azure.functions as func
 import function_app
 import pytest
+from indexer import settings as settings_module
 from indexer.chunking import split_text
 from indexer.settings import Settings, StubSource
 
@@ -73,3 +74,16 @@ def test_index_invalid_config_returns_503(monkeypatch, config):
     monkeypatch.setattr(function_app, "settings", Settings(StubSource(config)))
     response = call(function_app.index, json.dumps({"text": "abc"}).encode())
     assert response.status_code == 503
+
+
+def test_azure_load_selects_only_indexer_keys(monkeypatch):
+    captured = {}
+    monkeypatch.delenv("LAB_CONFIG_STUB")
+    monkeypatch.setenv("AZURE_APPCONFIG_ENDPOINT", "https://example.invalid")
+    monkeypatch.setenv("LAB_LABEL", "aks-dev")
+    monkeypatch.setattr(settings_module, "DefaultAzureCredential", lambda: object())
+    monkeypatch.setattr(settings_module, "load", lambda **kwargs: captured.update(kwargs) or StubSource())
+    settings_module.load_settings()
+    (selector,) = captured["selects"]
+    assert (selector.key_filter, selector.label_filter) == ("lab:indexer:*", "aks-dev")
+    assert captured["refresh_on"] == [("lab:sentinel", "aks-dev")]

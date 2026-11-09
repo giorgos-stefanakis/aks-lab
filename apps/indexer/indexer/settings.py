@@ -11,6 +11,8 @@ from azure.appconfiguration.provider import SettingSelector, load
 from azure.identity import DefaultAzureCredential
 
 KEY_PREFIX = "lab:"
+# Least privilege: the indexer never loads the Key Vault reference that sits under the shared prefix.
+SELECT_PREFIX = f"{KEY_PREFIX}indexer:"
 SENTINEL_KEY = "sentinel"
 DEFAULT_REFRESH_SECONDS = 30
 
@@ -68,7 +70,7 @@ def load_settings() -> Settings:
         load(
             endpoint=os.environ["AZURE_APPCONFIG_ENDPOINT"],
             credential=DefaultAzureCredential(),
-            selects=[SettingSelector(key_filter=f"{KEY_PREFIX}*", label_filter=label)],
+            selects=[SettingSelector(key_filter=f"{SELECT_PREFIX}*", label_filter=label)],
             trim_prefixes=[KEY_PREFIX],
             refresh_on=[(f"{KEY_PREFIX}{SENTINEL_KEY}", label)],
             refresh_interval=int(os.environ.get("LAB_REFRESH_SECONDS", DEFAULT_REFRESH_SECONDS)),
