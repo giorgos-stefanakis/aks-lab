@@ -1,6 +1,5 @@
 image:
   repository: acrlabyntm5u.azurecr.io/indexer
-  tag: "0.1.0"
 config:
   appConfigEndpoint: https://appcs-lab-yntm5u.azconfig.io
   label: aks-dev
