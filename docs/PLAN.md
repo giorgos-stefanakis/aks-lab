@@ -37,7 +37,8 @@ aks-lab/
 │   ├── platform/             argocd, envoy-gateway, cert-manager, gateway
 │   ├── apps/                 Argo Applications for api and indexer
 │   └── envs/                 local/, aks-dev/: values per workload
-├── scripts/
+├── config/                   seed.json for App Configuration
+├── scripts/                  issuer and kind helpers, from M4
 └── docs/
 ```
 
@@ -51,6 +52,5 @@ If time runs out, drop work in this order:
 
 ## Open points
 
-- How the local service principal is created: the Bicep Graph extension or an owner-run script. Decide in M2.
 - Model and region for Azure OpenAI: check quota before M2.
 - Node size for AKS: measure kind usage in M4 first.
