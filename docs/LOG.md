@@ -24,3 +24,24 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
 - Claude Code permission rules do not match `bash -c '…'` and are not a security boundary. A PreToolUse hook that
   exits 2 blocks before permission rules apply. Deny and ask rules apply from any settings scope.
   Source: https://code.claude.com/docs/en/permissions.md
+
+## 2026-11-09 (M1)
+
+- `azure-functions` 2.x needs Python 3.13. The indexer pins `azure-functions` 1.26.0 to stay on Python 3.12.
+- The versioned Functions base image tags stopped at `4.1036.0-python3.12` (built 2024-08). The `4-python3.12` tag is
+  current (built 2026-11-06) but floats, so the indexer Dockerfile pins it by digest.
+- A Poetry venv copied between Docker stages breaks its script shebangs. Build and run at the same path (`/srv`).
+- Ruff config lives once in the root `ruff.toml`. Per-file globs in it are relative to the root.
+- Both images run against a stub config file (`LAB_CONFIG_STUB`): api `/healthz`, `/readyz` and `/config` answer;
+  indexer `/api/health` and `/api/index` answer inside the Functions host.
+- Not yet exercised: the real App Configuration provider path (`load(...)`), Key Vault resolution and Azure OpenAI.
+  These need M2.
+
+## 2026-11-09 (M1 review)
+
+- Each failure path from the M1 code review reproduced as a failing test before its fix. Both suites now pass
+  (api 18, indexer 22). Fixed: non-object JSON bodies, invalid chunk config (now 503), redundant last chunk,
+  Entra auth errors on `/chat` (now 502), non-JSON indexer replies (now 502), per-request client creation,
+  and the `/config` deny-list (now an allow-list).
+- The Functions base image runs as uid 10001 on port 80. The Dockerfile now sets `USER 10001`.
+- In a container with no Azure credential, `/chat` returns 502 `ClientAuthenticationError`, not 500.

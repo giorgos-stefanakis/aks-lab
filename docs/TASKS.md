@@ -7,9 +7,9 @@ Status: `todo`, `doing`, `done`, `blocked`. Milestones are in [PLAN.md](PLAN.md)
 | T-001 | M0 | Write docs and AGENTS.md | done |
 | T-002 | M0 | Add the guard hook and permission rules. Test the block cases. | done |
 | T-003 | M0 | Owner reviews the docs | done |
-| T-010 | M1 | api: FastAPI service, settings loader, endpoints, unit tests, Dockerfile, Makefile | todo |
-| T-011 | M1 | indexer: Functions app, HTTP triggers, unit tests, Dockerfile, Makefile | todo |
-| T-012 | M1 | Root Makefile, `.editorconfig`, Ruff config | todo |
+| T-010 | M1 | api: FastAPI service, settings loader, endpoints, unit tests, Dockerfile, Makefile | done |
+| T-011 | M1 | indexer: Functions app, HTTP triggers, unit tests, Dockerfile, Makefile | done |
+| T-012 | M1 | Root Makefile, `.editorconfig`, Ruff config | done |
 | T-020 | M2 | Check Azure OpenAI model and quota in the region | todo |
 | T-021 | M2 | Bicep: ACR, App Configuration with keys, Key Vault, Azure OpenAI, identities, role assignments, budget | todo |
 | T-022 | M2 | Local service principal and its role assignments | todo |
