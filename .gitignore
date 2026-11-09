@@ -1,0 +1,22 @@
+# Local config and credentials
+.lab.env
+.env
+.env.*
+*.kubeconfig
+kubeconfig*
+local.settings.json
+.claude/settings.local.json
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# Build output
+*.tgz
+charts/*/charts/
+infra/**/*.json

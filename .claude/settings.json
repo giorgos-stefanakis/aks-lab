@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(az login *)",
+      "Bash(az logout *)",
+      "Bash(az account set *)",
+      "Bash(az group create *)",
+      "Bash(az group delete *)",
+      "Bash(az deployment group create *)",
+      "Bash(az deployment sub create *)",
+      "Bash(az deployment group delete *)",
+      "Bash(az ad sp create-for-rbac *)",
+      "Bash(az keyvault secret show *)",
+      "Bash(az acr credential *)",
+      "Bash(az account get-access-token *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(gh repo delete *)",
+      "Bash(make infra-deploy *)",
+      "Bash(make aks-up *)",
+      "Bash(make aks-down *)"
+    ],
+    "ask": [
+      "Bash(gh *)",
+      "Bash(git push *)",
+      "Bash(docker push *)",
+      "Bash(docker login *)",
+      "Bash(helm push *)",
+      "Bash(argocd *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
