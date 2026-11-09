@@ -326,3 +326,12 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
 - `make -n` runs recipe lines that contain `$(MAKE)`. A dry run of `publish` ran `az acr login`, which failed on a fake
   subscription ID. Do not dry-run targets that call Azure.
 - `make publish` has no default `VERSION`. A default from `Chart.yaml` would overwrite the released `0.1.0`.
+
+## 2026-11-10 (first release run)
+
+- The `v0.2.0` release job failed at `azure/login` with `AADSTS700213`. GitHub presented the subject
+  `repo:giorgos-stefanakis@351529295/aks-lab@1451541745:environment:release`, with the owner and repository IDs.
+  This corrects the M5 entry: the subject is not `repo:<owner>/<repo>:...` for this repository. The IDs keep the
+  subject valid across a rename or a re-created repository. `githubRepository` in `lab.bicepparam` now holds that form.
+- The `check` job passed on GitHub: lint and test, Helm 4.3.1, Bicep 0.49.2, Poetry from `pipx`, Python from
+  `.python-version`.

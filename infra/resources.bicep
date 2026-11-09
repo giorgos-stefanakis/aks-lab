@@ -22,7 +22,7 @@ param ownerObjectId string
 @description('Namespace of the api and indexer service accounts on kind.')
 param localWorkloadNamespace string = 'lab'
 
-@description('GitHub repository as owner/name.')
+@description('GitHub repository as owner@ownerId/name@repoId, the form GitHub puts in OIDC subjects.')
 param githubRepository string
 
 var tags = { purpose: 'lab' }

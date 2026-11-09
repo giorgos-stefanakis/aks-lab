@@ -5,4 +5,4 @@ param resourceGroupName = readEnvironmentVariable('LAB_RESOURCE_GROUP', 'rg-aks-
 param budgetEmail = readEnvironmentVariable('LAB_BUDGET_EMAIL')
 param budgetStart = '2026-11-01'
 param ownerObjectId = readEnvironmentVariable('LAB_OWNER_OBJECT_ID')
-param githubRepository = 'giorgos-stefanakis/aks-lab'
+param githubRepository = 'giorgos-stefanakis@351529295/aks-lab@1451541745'

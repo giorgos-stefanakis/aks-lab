@@ -16,7 +16,7 @@ param budgetStart string
 @description('Entra object ID of the person who sets secrets, edits settings and uploads the issuer files.')
 param ownerObjectId string
 
-@description('GitHub repository as owner/name.')
+@description('GitHub repository as owner@ownerId/name@repoId, the form GitHub puts in OIDC subjects.')
 param githubRepository string
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
