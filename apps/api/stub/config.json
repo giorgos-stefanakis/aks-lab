@@ -1,0 +1,10 @@
+{
+  "openai:endpoint": "https://stub.invalid",
+  "openai:deployment": "stub-model",
+  "message": "hello from the stub",
+  "sentinel": "1",
+  "secret": "stub-secret-value",
+  "feature_management": {
+    "feature_flags": [{"id": "lab-banner", "enabled": true}]
+  }
+}

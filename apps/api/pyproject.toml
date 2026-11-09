@@ -1,0 +1,26 @@
+[project]
+name = "api"
+version = "0.1.0"
+description = "FastAPI service of the aks-lab."
+requires-python = ">=3.12,<3.13"
+dependencies = ["fastapi==0.162.2", "uvicorn==0.54.0", "httpx==0.28.1", "openai==3.46.0", "azure-identity==1.27.0", "azure-appconfiguration-provider==2.5.1"]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests/unit"]
+pythonpath = ["."]
+
+[dependency-groups]
+dev = [
+    "pytest==9.2.0",
+    "pytest-asyncio==1.4.1.post1",
+    "ruff==0.17.4"
+]
