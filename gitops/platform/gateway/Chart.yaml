@@ -1,0 +1,5 @@
+apiVersion: v2
+name: gateway
+description: Gateway API Gateway and routes for the lab workloads
+type: application
+version: 0.1.0

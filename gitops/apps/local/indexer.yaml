@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: indexer
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  sources:
+    - repoURL: acrlabyntm5u.azurecr.io/charts
+      chart: indexer
+      targetRevision: 0.1.0
+      helm:
+        valueFiles: [$values/gitops/envs/local/indexer.yaml]
+    - repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: lab
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]

@@ -1,0 +1,21 @@
+# Applied once by `make local-up`. Argo then manages everything under the two paths below.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  sources:
+    - repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+      targetRevision: main
+      path: gitops/platform/local
+    - repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+      targetRevision: main
+      path: gitops/apps/local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

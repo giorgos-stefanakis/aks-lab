@@ -1,0 +1,14 @@
+# GatewayClass of the implementation: `envoy` on kind, `approuting-istio` on AKS.
+gatewayClassName: ""
+
+# Envoy Gateway ships no GatewayClass. AKS app routing provides its own.
+createGatewayClass: false
+gatewayClassController: gateway.envoyproxy.io/gatewayclass-controller
+
+# Namespace of the workloads that the routes point to.
+namespace: lab
+
+# Only the api is public. The indexer has no route.
+apiService:
+  name: api
+  port: 8000
