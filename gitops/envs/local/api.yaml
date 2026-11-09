@@ -8,3 +8,5 @@ identity:
   clientId: "296251e2-0446-4aeb-8b7f-65b7d6012b38"
   tenantId: "9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f"
   projectedToken: true
+imagePullSecrets:
+  - name: acr-pull

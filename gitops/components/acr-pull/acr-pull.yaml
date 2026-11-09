@@ -1,0 +1,32 @@
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: ACRAccessToken
+metadata:
+  name: acr-pull
+spec:
+  tenantId: "9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f"
+  registry: acrlabyntm5u.azurecr.io
+  environmentType: PublicCloud
+  # Without serviceAccountRef the controller uses its own federated identity.
+  # Without scope the token covers every repository the identity can pull.
+  auth:
+    workloadIdentity: {}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: acr-pull
+spec:
+  refreshInterval: 1h
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: ACRAccessToken
+          name: acr-pull
+  target:
+    name: acr-pull
+    template:
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: |
+          {"auths": {"acrlabyntm5u.azurecr.io": {"username": "{{ .username }}", "password": "{{ .password }}"}}}
