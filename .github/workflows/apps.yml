@@ -1,0 +1,94 @@
+name: apps
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  HELM_VERSION: v4.3.1
+  BICEP_VERSION: v0.49.2
+  POETRY_VERSION: 2.5.1
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version-file: .python-version
+      - run: pipx install "poetry==${POETRY_VERSION}"
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310  # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - run: az bicep install --version "${BICEP_VERSION}"
+      - run: make init
+      - run: make lint
+      - run: make test
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write  # create the GitHub release
+      id-token: write  # sign in to Azure with OIDC
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check the tag
+        id: tag
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "::error::Tag $GITHUB_REF_NAME is not vX.Y.Z"; exit 1; }
+          git merge-base --is-ancestor HEAD origin/main || { echo "::error::Tag $GITHUB_REF_NAME is not on main"; exit 1; }
+          echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310  # v5.0.1
+        with:
+          version: ${{ env.HELM_VERSION }}
+      - uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906  # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Publish images and charts
+        run: make publish VERSION="${{ steps.tag.outputs.version }}" ACR="${{ vars.ACR_LOGIN_SERVER }}"
+        env:
+          LAB_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Create the GitHub release
+        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+      # Pushes made with GITHUB_TOKEN start no workflow, so this commit does not trigger a new run.
+      - name: Deploy to local
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for attempt in 1 2 3; do
+            git fetch origin main && git switch -C main origin/main
+            current=$(sed -n -E '/^ *chart: api$/{n;s/^ *targetRevision: *//p}' gitops/clusters/local/apps/api.yaml)
+            if [[ "$(printf '%s\n' "$current" "$VERSION" | sort -V | tail -1)" != "$VERSION" || "$current" == "$VERSION" ]]; then
+              echo "local runs $current; $VERSION is not newer. Nothing to deploy."
+              exit 0
+            fi
+            for app in api indexer; do
+              sed -i -E "/^ *chart: $app$/{n;s/^( *targetRevision: ).*/\1$VERSION/}" "gitops/clusters/local/apps/$app.yaml"
+            done
+            git diff --quiet && { echo "::error::No targetRevision changed"; exit 1; }
+            git commit -am "chore(gitops): deploy v$VERSION to local"
+            git push origin main && exit 0
+            echo "main moved; retrying"
+          done
+          exit 1

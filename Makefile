@@ -3,7 +3,6 @@ CHARTS := api indexer
 ENVS := local aks-dev
 GATEWAY_CHART := gitops/components/gateway
 HELM ?= helm
-VERSION := $(shell sed -n 's/^version: //p' charts/api/Chart.yaml)
 ISSUER_URL = $(patsubst %/,%,$(LAB_ISSUER_URL))
 
 -include .lab.env
@@ -37,14 +36,17 @@ infra-whatif: _check-env ## Preview the Bicep deployment. Changes nothing.
 infra-deploy: _check-env ## Deploy the Bicep after a what-if and a confirmation
 	az deployment sub create $(DEPLOY_ARGS) --confirm-with-what-if
 
-publish: _check-env _lint-charts ## Build and push both images and both charts to ACR
-	acr=$$(az deployment sub show --subscription $(LAB_SUBSCRIPTION_ID) -n main --query properties.outputs.acrLoginServer.value -o tsv) && \
-	az acr login --subscription $(LAB_SUBSCRIPTION_ID) --name $${acr%%.*} && \
+publish: ## Push both images and both charts to ACR at VERSION. The release job runs it; a pushed version is never reused.
+	@test -n "$(VERSION)" || { echo "Set VERSION, e.g. make publish VERSION=0.2.0"; exit 1; }
+	@test -n "$(LAB_SUBSCRIPTION_ID)" || { echo "Set LAB_SUBSCRIPTION_ID"; exit 1; }
+	acr="$(ACR)" && { [ -n "$$acr" ] || acr=$$(az deployment sub show --subscription $(LAB_SUBSCRIPTION_ID) -n main --query properties.outputs.acrLoginServer.value -o tsv); } && \
+	az acr login --subscription $(LAB_SUBSCRIPTION_ID) --name $${acr%%.*} --expose-token --output tsv --query accessToken \
+		| docker login $$acr --username 00000000-0000-0000-0000-000000000000 --password-stdin && \
 	for app in api indexer; do \
 		$(MAKE) -C apps/$$app image IMAGE=$$acr/$$app:$(VERSION) && docker push $$acr/$$app:$(VERSION) || exit 1; \
 	done && \
 	mkdir -p dist && for chart in $(CHARTS); do \
-		$(HELM) package charts/$$chart --destination dist && \
+		$(HELM) package charts/$$chart --version $(VERSION) --app-version $(VERSION) --destination dist && \
 		$(HELM) push dist/$$chart-$(VERSION).tgz oci://$$acr/charts || exit 1; \
 	done
 
