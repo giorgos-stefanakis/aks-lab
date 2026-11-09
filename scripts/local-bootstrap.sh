@@ -27,4 +27,11 @@ kubectl --context kind-aks-lab -n argocd create secret generic repo-envoyproxy \
   | kubectl --context kind-aks-lab label --local -f - argocd.argoproj.io/secret-type=repository -o yaml \
   | kubectl --context kind-aks-lab apply -f -
 
+kubectl --context kind-aks-lab -n argocd create secret generic repo-acr-charts \
+  --from-literal=type=helm --from-literal=name=acr-charts --from-literal=url=acrlabyntm5u.azurecr.io/charts \
+  --from-literal=enableOCI=true --from-literal=useAzureWorkloadIdentity=true \
+  --dry-run=client -o yaml \
+  | kubectl --context kind-aks-lab label --local -f - argocd.argoproj.io/secret-type=repository -o yaml \
+  | kubectl --context kind-aks-lab apply -f -
+
 kubectl --context kind-aks-lab apply -f "$root/gitops/clusters/local/root.yaml"

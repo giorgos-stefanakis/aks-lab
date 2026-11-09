@@ -6,3 +6,32 @@ notifications:
 configs:
   params:
     server.insecure: true
+
+# kind has no workload identity webhook, so the repo server gets its token from a projected volume.
+# The Bicep federated credential names this service account.
+repoServer:
+  serviceAccount:
+    name: argocd-repo-server
+    annotations:
+      azure.workload.identity/client-id: "9594e9e7-4a5e-4452-93a3-c50648aeb2b6"
+  env:
+    - name: AZURE_CLIENT_ID
+      value: "9594e9e7-4a5e-4452-93a3-c50648aeb2b6"
+    - name: AZURE_TENANT_ID
+      value: "9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f"
+    - name: AZURE_FEDERATED_TOKEN_FILE
+      value: /var/run/secrets/azure/tokens/azure-identity-token
+    - name: AZURE_AUTHORITY_HOST
+      value: https://login.microsoftonline.com/
+  volumes:
+    - name: azure-identity-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              audience: api://AzureADTokenExchange
+              expirationSeconds: 3600
+              path: azure-identity-token
+  volumeMounts:
+    - name: azure-identity-token
+      mountPath: /var/run/secrets/azure/tokens
+      readOnly: true
