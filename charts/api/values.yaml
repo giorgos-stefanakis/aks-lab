@@ -1,6 +1,6 @@
 image:
   repository: ""   # required: <registry>/api
-  tag: ""          # required: pinned tag, never latest
+  tag: ""          # defaults to the chart appVersion
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 
