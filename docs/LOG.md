@@ -276,3 +276,24 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   points the `envoy` GatewayClass at it. Verified on kind at `9a52f39`: the proxy Service is `ClusterIP`, the Gateway
   is `Programmed` with that IP as its address, and all seven Applications are `Synced` and `Healthy`. Through a
   port-forward to the Envoy Service, `/healthz` returns 200 and `/config` returns `secret: resolved`.
+
+## 2026-11-09 (M4 acceptance checks on kind)
+
+- Check 4 passes on kind at `9dc52da`. Through a port-forward to the Envoy Service, `POST /chat` returns 200 with an
+  answer from deployment `gpt-5-mini`.
+- Check 5 passes on kind at `9dc52da`. `POST /index` returns 200 with `chunks`, `chunk_size: 200` and
+  `chunk_overlap: 20`. So the api reaches the indexer, and the indexer reads its values from App Configuration.
+- The indexer storage warning: the Functions host logs `azure.functions.webjobs.storage` `Unhealthy` ("Unable to
+  create client for AzureWebJobsStorage") about every 30 s. The indexer sets no `AzureWebJobsStorage`, and SPEC.md
+  lists no storage for it. HTTP triggers do not need it, and the readiness probe on `/api/health` passes. Kept as is.
+- Usage for the AKS node size: the kind node container uses 2.6 GiB of memory with Argo CD, Envoy Gateway, External
+  Secrets Operator, api and indexer running. One `docker stats` sample, no metrics-server.
+- Check 1 passes on kind. After `make local-down`, `make local-up` took 74 s. Argo CD then brought all seven
+  Applications to `Synced` and `Healthy` in 173 s, with no manual `kubectl apply`. Check 2 passes again on the new
+  cluster.
+- Check 3 passes on kind. `GET /config` was polled every 5 s while the owner changed App Configuration. Sentinel `2`
+  appeared at 22:44:42. The owner then set `lab:message` (label `local`) and sentinel `3`. Both appeared together at
+  22:47:16. The api pod had 0 restarts. A value saved under another label does not show, because the provider selects
+  label `local` only.
+- M4 is done: acceptance checks 1 to 5 pass on kind.
+- The guard hook also matches `kubectl apply` in heredoc text, even with no command. Append to docs with the Edit tool.
