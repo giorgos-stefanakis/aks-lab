@@ -21,3 +21,6 @@ coverage.xml
 dist/
 charts/*/charts/
 infra/**/*.json
+
+# Local cluster state: service-account keys and generated config
+.local/
