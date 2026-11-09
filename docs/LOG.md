@@ -231,3 +231,33 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   `infra-lint`, `chart-lint`, `chart-template`, `local-issuer` and `check-lab-env`. The checks that remain are
   underscore targets and stay out of the help. Earlier entries use the old names. `make lint` exits 0.
 - The private key file was mode 0644 when first written (see the correction above) so the API server can read it inside the node. It sits in `.local/`, which git ignores.
+
+## 2026-11-09 (M4 Argo CD identity and image pull)
+
+- The owner pushed `main` and ran `make local-up`. Verified on kind: Argo CD 3.x pods run, `root` and
+  `envoy-gateway` are `Synced` and `Healthy`, and the Envoy Gateway pod runs. So Argo CD pulled the OCI chart
+  `docker.io/envoyproxy/gateway-helm` v1.10.0 through the registered repo `repo-envoyproxy`.
+- First run: `gateway`, `api` and `indexer` showed sync `Unknown` with `ComparisonError ... DeadlineExceeded`. No ACR
+  repository was registered in Argo CD, and the `api` and `indexer` chart pulls from ACR hung.
+- Fix (T-043): `gitops/clusters/local/argocd-values.yaml` gives the repo-server the `argocd` identity (service-account
+  annotation, projected token, `AZURE_*` variables). The bootstrap registers `acrlabyntm5u.azurecr.io/charts` as an OCI
+  repository with `useAzureWorkloadIdentity`. `make local-up` on the existing cluster applies both.
+- Verified on kind after the fix: `api`, `indexer` and `gateway` are `Synced`. Argo CD pulled both charts from ACR with
+  workload identity. So Entra accepts tokens from the kind issuer (T-044).
+- Open: the `api` and `indexer` pods fail with `ImagePullBackOff`. The kubelet pulls anonymously and ACR returns 401.
+  Workload identity covers pods, not the kubelet. T-045 adds the pull secret.
+- T-045 written, not verified: External Secrets Operator chart 2.14.0 (app v2.14.0, Apache 2.0) from
+  `charts.external-secrets.io`. An `ACRAccessToken` generator in `lab` writes the `acr-pull` secret, and the `api` and
+  `indexer` local values reference it.
+- Source check, ESO `main` (`generators/v1/acr/acr.go`): with `auth.workloadIdentity` and no `serviceAccountRef`, the
+  generator reads `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_FEDERATED_TOKEN_FILE` from the controller process. So
+  the controller uses its own federated identity, `external-secrets:external-secrets`, which Bicep federates. With no
+  `scope`, the password is an ACR refresh token and the username is the null GUID. In chart 2.14.0 `ExternalSecret` is
+  served as `external-secrets.io/v1` and `ACRAccessToken` as `generators.external-secrets.io/v1alpha1`.
+- `git ls-remote` over SSH hangs in the agent shell, most likely on a passphrase prompt. The agent cannot reach
+  GitHub over SSH. Use the local `origin/main` ref, or ask the owner.
+- Layout change, supersedes the layout bullet of the M4 cluster entry: Applications live in
+  `gitops/clusters/<cluster>/{platform,apps}`, with `root.yaml` and `argocd-values.yaml` beside them. Content without
+  an environment lives in `gitops/components/` (the `gateway` chart, the `acr-pull` manifests). Values stay in
+  `gitops/envs/<env>/`, the path SPEC.md and D-13 name. The root app still has two sources, so it never parses
+  `argocd-values.yaml`.

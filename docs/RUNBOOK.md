@@ -122,3 +122,18 @@ make local-up
 `local-up` creates the cluster, installs Argo CD and applies the root app. It stops when the published issuer document
 differs from `.local/oidc`, or when an existing cluster uses another issuer. In the second case run `make local-down`
 first. `make local-down` deletes the cluster and keeps the key pair.
+
+On an existing cluster, `local-up` upgrades Argo CD and re-applies the repository secrets from your working tree.
+Run it again after a change to `gitops/clusters/local/argocd-values.yaml` or `scripts/local-bootstrap.sh`.
+
+### 4. Check the image pull secret
+
+The kind kubelet has no Azure identity. External Secrets Operator makes the `acr-pull` secret in `lab`, and the
+workloads pull with it.
+
+```bash
+kubectl --context kind-aks-lab -n lab get externalsecret acr-pull
+kubectl --context kind-aks-lab -n lab get pods
+```
+
+The ExternalSecret shows `SecretSynced`, and the `api` and `indexer` pods run.
