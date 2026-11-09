@@ -18,10 +18,10 @@ Status: `todo`, `doing`, `done`, `blocked`. Milestones are in [PLAN.md](PLAN.md)
 | T-031 | M3 | `make publish`: build, push images, package and push charts | done |
 | T-040 | M4 | kind cluster script and `make local-up`, `make local-down` | done |
 | T-041 | M4 | Argo CD bootstrap and root app for `local` | done |
-| T-042 | M4 | Envoy Gateway and the `gateway` chart | doing |
-| T-043 | M4 | Local identity wiring: projected token and `AZURE_*` env in the chart, Argo repo secret with workload identity | doing |
+| T-042 | M4 | Envoy Gateway and the `gateway` chart | done |
+| T-043 | M4 | Local identity wiring: projected token and `AZURE_*` env in the chart, Argo repo secret with workload identity | done |
 | T-044 | M4 | kind OIDC issuer: service-account key pair, JWKS script, upload to the issuer storage, kind config, runbook steps | done |
-| T-045 | M4 | Spike: External Secrets Operator `ACRAccessToken` generator makes the ACR pull secret. Fallback: scoped token in Key Vault. | doing |
+| T-045 | M4 | Spike: External Secrets Operator `ACRAccessToken` generator makes the ACR pull secret. Fallback: scoped token in Key Vault. | done |
 | T-050 | M5 | GitHub repository and Argo deploy key (owner) | done |
 | T-051 | M5 | `apps.yml`: lint, test, build, push, bump versions | todo |
 | T-052 | M5 | `infra.yml`: what-if on pull requests, deploy on `main` | todo |

@@ -261,3 +261,18 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   an environment lives in `gitops/components/` (the `gateway` chart, the `acr-pull` manifests). Values stay in
   `gitops/envs/<env>/`, the path SPEC.md and D-13 name. The root app still has two sources, so it never parses
   `argocd-values.yaml`.
+- The owner pushed `main` and re-applied the root app. Verified on kind: `external-secrets`, `acr-pull`, `api` and
+  `indexer` are `Synced` and `Healthy`. The `acr-pull` ExternalSecret is `SecretSynced`, and both pods pulled their
+  images from ACR with it. So the ESO `ACRAccessToken` generator works with the controller's own federated identity
+  (T-045).
+- Verified on kind: `GET /config` on the api returns label `local`, the App Configuration values, the feature flag and
+  `secret: resolved`. So the api pod exchanges its projected token with Entra and reads App Configuration and Key Vault
+  (T-043).
+- Open: the indexer host reports `azure.functions.webjobs.storage` as `Unhealthy`. The HTTP triggers still answer.
+- Open (T-042): the `gateway` app stays `Progressing`. The Gateway is `Accepted` but `Programmed=False` with
+  `AddressNotAssigned`, because the Envoy proxy Service is `LoadBalancer` and kind has no load balancer. It stays
+  `<pending>`.
+- Fix (T-042): the local `gateway` values set `envoyServiceType: ClusterIP`. The chart then creates an `EnvoyProxy` and
+  points the `envoy` GatewayClass at it. Verified on kind at `9a52f39`: the proxy Service is `ClusterIP`, the Gateway
+  is `Programmed` with that IP as its address, and all seven Applications are `Synced` and `Healthy`. Through a
+  port-forward to the Envoy Service, `/healthz` returns 200 and `/config` returns `secret: resolved`.
