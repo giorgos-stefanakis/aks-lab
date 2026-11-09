@@ -93,7 +93,7 @@ All resources sit in one resource group, tagged `purpose=lab`.
 
 ## Delivery
 
-- A pull request runs lint, tests, chart lint and Bicep what-if.
+- A pull request runs lint, tests, chart lint and Bicep lint. The owner runs the Bicep what-if and deploy with `make`.
 - A merge to `main` builds and pushes images, packages and pushes charts, deploys Bicep, and commits the new
   chart versions to `gitops/envs/`.
 - Argo CD syncs each cluster from `gitops/`.

@@ -23,7 +23,7 @@ A real platform would revisit each one.
 | D-10 | **cert-manager with Let's Encrypt on AKS only.** The hostname is the DNS label of a static public IP. | Free, publicly trusted certificates. No domain to buy. |
 | D-11 | **Azure OpenAI is an external dependency.** Endpoint and deployment name live in App Configuration. Auth uses Entra. | Swapping the AI provider is a config change. |
 | D-12 | **Bicep for Azure only**, incremental mode, what-if before deploy. Everything inside a cluster goes through GitOps. | One tool per layer. No hidden changes. |
-| D-13 | **GitHub Actions with OIDC** to Azure. A `vX.Y.Z` tag on `main` publishes images and charts at that version. The release job then pins that chart version in git for `local`. Other clusters get it through a promotion pull request. The image tag follows the chart `appVersion`. | No stored cloud secrets. Git records what runs on each cluster; rollback is a revert. |
+| D-13 | **GitHub Actions with OIDC** to Azure. A `vX.Y.Z` tag on `main` publishes images and charts at that version. The release job then pins that chart version in git for every cluster in one commit. No promotion step, no pull requests. The image tag follows the chart `appVersion`. | No stored cloud secrets. Git records what runs on each cluster; rollback is a revert. |
 | D-14 | **Cheapest AKS:** Free tier, 3 small nodes, one resource group, a budget alert, stopped when idle. | The lab runs for days, not months. |
 | D-15 | **Monorepo** for source, charts, Bicep and GitOps config. | Easy to read in a demo. A real setup would give each client cluster read access to its own config only. |
 | D-16 | **Python tooling:** pyenv, Poetry, Ruff, pytest, a Makefile per component. | Common, well-known tools. |

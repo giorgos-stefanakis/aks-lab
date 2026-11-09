@@ -335,3 +335,14 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   subject valid across a rename or a re-created repository. `githubRepository` in `lab.bicepparam` now holds that form.
 - The `check` job passed on GitHub: lint and test, Helm 4.3.1, Bicep 0.49.2, Poetry from `pipx`, Python from
   `.python-version`.
+- After the owner deployed the subject fix, the re-run `v0.2.0` release passed. So `az acr login --expose-token`
+  works with `AcrPush` alone, and the bot push to the unprotected `main` works. The job pushed
+  `chore(gitops): deploy v0.2.0 to local` (`1e0b67c`). On kind both pods ran the `0.2.0` images.
+- Check 6 passes on kind. The owner pushed tag `v0.2.1` on `12458b9`. With no further step, the job pushed the deploy
+  commit `fd9840c`, and Argo synced `api` and `indexer` to chart `0.2.1`. Both pods ran the `0.2.1` images 258 s after
+  the push, with all Applications `Synced` and `Healthy`.
+- Decided with the owner: no Azure access from pull requests. T-052 (`infra.yml`, what-if with a read-only identity) is
+  dropped. Pull requests still run `check` in `apps.yml`, which needs no Azure. The owner runs the what-if with `make`.
+  M5 is done.
+- Decided with the owner: `aks-dev` gets no promotion pull request. In M6 the release job pins `aks-dev` in the same
+  deploy commit as `local` (T-063). This supersedes the promotion bullet in the M5 release flow entry.

@@ -54,7 +54,7 @@ resource eso 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   tags: tags
 }
 
-// Pushes images and charts from release tags. Pull requests must never sign in as it: T-052 gives them their own identity.
+// Pushes images and charts from release tags. Pull requests must never sign in as it.
 resource github 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'id-lab-github'
   location: location

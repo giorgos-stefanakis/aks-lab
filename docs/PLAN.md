@@ -26,7 +26,7 @@ Tasks live in [TASKS.md](TASKS.md).
 ```
 aks-lab/
 ├── AGENTS.md, README.md, Makefile
-├── .github/workflows/        apps.yml, infra.yml
+├── .github/workflows/        apps.yml
 ├── apps/
 │   ├── api/                  FastAPI
 │   └── indexer/              Azure Functions
@@ -48,7 +48,6 @@ If time runs out, drop work in this order:
 
 1. M8 polish. Demo from the acceptance checks instead.
 2. M7. Use `kubectl port-forward` on AKS.
-3. Automated Bicep deploy in M5. Keep the what-if on pull requests; the owner deploys with `make`.
 
 ## Open points
 
