@@ -1,0 +1,5 @@
+{
+  "indexer:chunk_size": "200",
+  "indexer:chunk_overlap": "20",
+  "sentinel": "1"
+}
