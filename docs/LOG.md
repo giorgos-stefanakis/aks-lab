@@ -297,3 +297,32 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   label `local` only.
 - M4 is done: acceptance checks 1 to 5 pass on kind.
 - The guard hook also matches `kubectl apply` in heredoc text, even with no command. Append to docs with the Edit tool.
+
+## 2026-11-09 (M5 release flow)
+
+- Decided with the owner: a `vX.Y.Z` tag on `main` publishes images and charts at `X.Y.Z` and creates a GitHub
+  release. The release job then pins the chart `targetRevision` for `local` in git and pushes that commit to `main`.
+  `aks-dev` gets a promotion pull request in M6 (T-063). Git stays the record of what runs, and every version stays
+  pinned. SPEC.md check 6 and D-13 say this. No release branch and no Poetry version bump: the apps have
+  `package-mode = false`.
+- The chart image tag defaults to the chart `appVersion`, so one `targetRevision` line sets both chart and image.
+- The deploy step skips the commit when `local` already runs the same or a newer version (`sort -V`). Simulated on
+  copies of the Application files: `0.2.0` and `0.10.0` deploy, `0.9.0` and a repeat of `0.10.0` are skipped, and the
+  git source `targetRevision: main` is untouched. Unverified: that the bot push to `main` succeeds. It needs `main`
+  unprotected, or a bypass for the job.
+- Entra federated credentials match the subject exactly, with no wildcards. A tag subject would need one credential per
+  tag, so the release job runs in the GitHub environment `release` (`repo:<owner>/<repo>:environment:release`). The
+  environment admits only `v*` tags, because any job in it can sign in as `id-lab-github`.
+- Pull requests get no credential on `id-lab-github`. It holds `AcrPush`, so a pull-request run could push a chart.
+  T-052 adds a separate read-only identity for the what-if.
+- `AcrPush` has no control-plane read. `publish` signs in with `az acr login --expose-token` and `docker login`.
+  Unverified: that `az acr login` gets a token with `AcrPush` alone. The az CLI source falls back to `<name>.azurecr.io`
+  when the registry lookup fails.
+- The published `0.1.0` charts require `image.tag`. The values must keep `image.tag` until a release publishes charts
+  that default to `appVersion`, so the gitops switch is a separate commit, pushed after the first release.
+- Action pins, at least two weeks old, all MIT: `actions/checkout` v7.0.1, `actions/setup-python` v7.1.0,
+  `azure/login` v3.1.0, `azure/setup-helm` v5.0.1. Poetry 2.5.1 comes from `pipx`. Unverified: that `pipx` is
+  preinstalled on `ubuntu-24.04` runners, and that `setup-python` has Python 3.12.16 from `.python-version`.
+- `make -n` runs recipe lines that contain `$(MAKE)`. A dry run of `publish` ran `az acr login`, which failed on a fake
+  subscription ID. Do not dry-run targets that call Azure.
+- `make publish` has no default `VERSION`. A default from `Chart.yaml` would overwrite the released `0.1.0`.

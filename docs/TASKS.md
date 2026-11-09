@@ -23,8 +23,11 @@ Status: `todo`, `doing`, `done`, `blocked`. Milestones are in [PLAN.md](PLAN.md)
 | T-044 | M4 | kind OIDC issuer: service-account key pair, JWKS script, upload to the issuer storage, kind config, runbook steps | done |
 | T-045 | M4 | Spike: External Secrets Operator `ACRAccessToken` generator makes the ACR pull secret. Fallback: scoped token in Key Vault. | done |
 | T-050 | M5 | GitHub repository and Argo deploy key (owner) | done |
-| T-051 | M5 | `apps.yml`: lint, test, build, push, bump versions | todo |
-| T-052 | M5 | `infra.yml`: what-if on pull requests, deploy on `main` | todo |
+| T-051 | M5 | `apps.yml`: lint and test on pull requests and `main`; on a `vX.Y.Z` tag, publish images and charts and create the GitHub release | doing |
+| T-053 | M5 | Bicep: GitHub federated credential for the `release` environment, limited to `v*` tags | doing |
+| T-054 | M5 | Release job pins the chart version for `local` in git; the chart image tag defaults to `appVersion` | doing |
+| T-063 | M6 | Release job opens a promotion pull request that pins the chart version for `aks-dev` | todo |
+| T-052 | M5 | `infra.yml`: what-if on pull requests with its own read-only identity, never `id-lab-github`. The owner deploys with `make`. | todo |
 | T-060 | M6 | Bicep: AKS, static public IP, AKS federated credentials, `AcrPull` for the kubelet identity | todo |
 | T-061 | M6 | Argo CD on AKS with workload identity for ACR | todo |
 | T-062 | M6 | Root app for `aks-dev` | todo |

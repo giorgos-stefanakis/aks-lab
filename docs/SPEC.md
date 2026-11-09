@@ -106,7 +106,7 @@ All resources sit in one resource group, tagged `purpose=lab`.
    without a restart.
 4. `POST /chat` returns an answer from Azure OpenAI on both clusters.
 5. `POST /index` returns a chunk count from the indexer on both clusters.
-6. A merge to `main` changes a running pod's image without manual steps.
+6. Pushing a `vX.Y.Z` tag on `main` changes a running pod's image without further steps.
 7. On AKS, no workload has a stored Azure credential. `GET /config` still works.
 8. On AKS, `https://<host>/healthz` returns 200 with a publicly trusted certificate.
 9. `make local-down` and `make aks-down` remove everything they created.
