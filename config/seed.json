@@ -1,0 +1,24 @@
+{
+  "items": [
+    { "key": "lab:message", "label": "local", "value": "hello from App Configuration (local)" },
+    { "key": "lab:sentinel", "label": "local", "value": "1" },
+    { "key": "lab:indexer:chunk_size", "label": "local", "value": "200" },
+    { "key": "lab:indexer:chunk_overlap", "label": "local", "value": "20" },
+    {
+      "key": ".appconfig.featureflag/lab-banner",
+      "label": "local",
+      "value": "{\"id\":\"lab-banner\",\"description\":\"Demo flag\",\"enabled\":true,\"conditions\":{\"client_filters\":[]}}",
+      "content_type": "application/vnd.microsoft.appconfig.ff+json;charset=utf-8"
+    },
+    { "key": "lab:message", "label": "aks-dev", "value": "hello from App Configuration (aks-dev)" },
+    { "key": "lab:sentinel", "label": "aks-dev", "value": "1" },
+    { "key": "lab:indexer:chunk_size", "label": "aks-dev", "value": "200" },
+    { "key": "lab:indexer:chunk_overlap", "label": "aks-dev", "value": "20" },
+    {
+      "key": ".appconfig.featureflag/lab-banner",
+      "label": "aks-dev",
+      "value": "{\"id\":\"lab-banner\",\"description\":\"Demo flag\",\"enabled\":true,\"conditions\":{\"client_filters\":[]}}",
+      "content_type": "application/vnd.microsoft.appconfig.ff+json;charset=utf-8"
+    }
+  ]
+}
