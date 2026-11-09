@@ -1,7 +1,7 @@
 APPS := apps/api apps/indexer
 CHARTS := api indexer
 ENVS := local aks-dev
-GATEWAY_CHART := gitops/platform/gateway
+GATEWAY_CHART := gitops/components/gateway
 HELM ?= helm
 VERSION := $(shell sed -n 's/^version: //p' charts/api/Chart.yaml)
 ISSUER_URL = $(patsubst %/,%,$(LAB_ISSUER_URL))

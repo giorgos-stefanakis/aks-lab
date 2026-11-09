@@ -17,5 +17,4 @@ spec:
     namespace: envoy-gateway-system
   syncPolicy:
     automated: { prune: true, selfHeal: true }
-    # The chart ships Gateway API CRDs that exceed the client-side apply annotation limit.
     syncOptions: [CreateNamespace=true, ServerSideApply=true]

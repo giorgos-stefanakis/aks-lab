@@ -11,7 +11,7 @@ spec:
   source:
     repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
     targetRevision: main
-    path: gitops/platform/gateway
+    path: gitops/components/gateway
     helm:
       valueFiles: [../../envs/local/gateway.yaml]
   destination:

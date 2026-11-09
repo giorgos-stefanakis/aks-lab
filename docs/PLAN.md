@@ -33,9 +33,9 @@ aks-lab/
 ├── charts/                   api, indexer: published to ACR
 ├── infra/                    main.bicep, modules/, params/
 ├── gitops/
-│   ├── bootstrap/            root app per cluster
-│   ├── platform/             argocd, envoy-gateway, cert-manager, gateway
-│   ├── apps/                 Argo Applications for api and indexer
+│   ├── clusters/             local/, aks-dev/: only Argo Applications
+│   │   └── <cluster>/        root.yaml, argocd-values.yaml, platform/, apps/
+│   ├── components/           gateway chart, acr-pull manifests: no environment in them
 │   └── envs/                 local/, aks-dev/: values per workload
 ├── config/                   seed.json for App Configuration
 ├── scripts/                  issuer and kind helpers, from M4
