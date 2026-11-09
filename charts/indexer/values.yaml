@@ -1,0 +1,25 @@
+image:
+  repository: ""   # required: <registry>/indexer
+  tag: ""          # required: pinned tag, never latest
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicas: 1
+# The Functions host listens on 80 in the image. The chart moves it to 8080 so the pod needs no capabilities.
+port: 8080
+
+config:
+  appConfigEndpoint: ""   # required
+  label: ""               # required: App Configuration label, one per environment
+  refreshSeconds: 30
+
+# Entra workload identity. The AKS webhook injects the token and AZURE_* variables.
+identity:
+  clientId: ""   # required
+  tenantId: ""   # required
+  # On clusters without the webhook (kind), the chart projects the token itself.
+  projectedToken: false
+
+resources:
+  requests: { cpu: 100m, memory: 256Mi }
+  limits: { memory: 512Mi }

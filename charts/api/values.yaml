@@ -1,0 +1,24 @@
+image:
+  repository: ""   # required: <registry>/api
+  tag: ""          # required: pinned tag, never latest
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+replicas: 1
+
+config:
+  appConfigEndpoint: ""   # required
+  label: ""               # required: App Configuration label, one per environment
+  refreshSeconds: 30
+  indexerUrl: http://indexer:8080
+
+# Entra workload identity. The AKS webhook injects the token and AZURE_* variables.
+identity:
+  clientId: ""   # required
+  tenantId: ""   # required
+  # On clusters without the webhook (kind), the chart projects the token itself.
+  projectedToken: false
+
+resources:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits: { memory: 256Mi }

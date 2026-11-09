@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      {{- include "app.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "app.selector" . | nindent 8 }}
+        {{- if not .Values.identity.projectedToken }}
+        azure.workload.identity/use: "true"
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "app.name" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ include "app.name" . }}
+          image: "{{ required "image.repository is required" .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: AZURE_APPCONFIG_ENDPOINT
+              value: {{ required "config.appConfigEndpoint is required" .Values.config.appConfigEndpoint | quote }}
+            - name: LAB_LABEL
+              value: {{ required "config.label is required" .Values.config.label | quote }}
+            - name: LAB_REFRESH_SECONDS
+              value: {{ .Values.config.refreshSeconds | quote }}
+            - name: INDEXER_URL
+              value: {{ .Values.config.indexerUrl | quote }}
+            {{- if .Values.identity.projectedToken }}
+            - name: AZURE_CLIENT_ID
+              value: {{ required "identity.clientId is required" .Values.identity.clientId | quote }}
+            - name: AZURE_TENANT_ID
+              value: {{ required "identity.tenantId is required" .Values.identity.tenantId | quote }}
+            - name: AZURE_FEDERATED_TOKEN_FILE
+              value: /var/run/secrets/azure/tokens/azure-identity-token
+            - name: AZURE_AUTHORITY_HOST
+              value: https://login.microsoftonline.com/
+            {{- end }}
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          {{- if .Values.identity.projectedToken }}
+          volumeMounts:
+            - name: azure-identity-token
+              mountPath: /var/run/secrets/azure/tokens
+              readOnly: true
+          {{- end }}
+      {{- if .Values.identity.projectedToken }}
+      volumes:
+        - name: azure-identity-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: api://AzureADTokenExchange
+                  expirationSeconds: 3600
+                  path: azure-identity-token
+      {{- end }}

@@ -1,0 +1,10 @@
+image:
+  repository: acrlabyntm5u.azurecr.io/indexer
+  tag: "0.1.0"
+config:
+  appConfigEndpoint: https://appcs-lab-yntm5u.azconfig.io
+  label: local
+identity:
+  clientId: "34759fe9-acf7-46ea-9b3c-7179fa134164"
+  tenantId: "9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f"
+  projectedToken: true
