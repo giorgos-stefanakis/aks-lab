@@ -169,3 +169,26 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
 - Bicep cannot register resource providers. A deployment registers the ones it needs. The runbook keeps a one-line
   fallback for a what-if that reports a missing registration.
 - `/bin/sh` is dash on this system. Make recipes must not use bash-only syntax such as `${!var}`.
+
+## 2026-11-09 (M3 charts)
+
+- Helm is not installed here. The Makefile runs Helm v4.3.1 from the pinned `alpine/helm:4.3.1` image. Set `HELM=helm`
+  to use a local binary. Unverified: whether `helm push` inside the container finds the registry credentials in
+  `~/.docker`.
+- Update: the owner installed Helm v4.3.1 at `/usr/local/bin/helm`. The Makefile now calls `helm` directly, and the
+  Docker wrapper and the `~/.docker` credential question no longer apply. Lint and template pass with it.
+- `make chart-lint` and `make chart-template` pass for `local` and `aks-dev` on both charts. The rendered output was
+  read, not applied to a cluster.
+- The Functions host runs on port 8080 with `ASPNETCORE_URLS`, all capabilities dropped and `no-new-privileges`.
+  `/api/health` answers 200. The chart uses this, so the pod needs no `NET_BIND_SERVICE`.
+- `local` values set `identity.projectedToken: true`. The chart then projects the service-account token and sets the
+  `AZURE_*` variables. `aks-dev` relies on the AKS webhook through the `azure.workload.identity/use` label. This
+  covers part of T-043. The Argo repo secret in that task is still open.
+- Images and charts share one version, `0.1.0`, set in the root Makefile and in `gitops/envs/*`. ACR tags are mutable,
+  so a second push replaces the first. M5 replaces this with commit-based tags.
+- `gitops/envs/*` hold the ACR server, App Configuration endpoint, client IDs and tenant ID from the M2 outputs.
+  They are identifiers, not secrets.
+- The owner ran `make publish` and reports that both images and both charts reached ACR at `0.1.0`. Not checked by
+  an agent: no repository listing was read.
+- The guard hook scans the text of a Bash command, heredocs included. Edit the Makefile and docs with the Edit tool when
+  the text names Azure-facing targets.

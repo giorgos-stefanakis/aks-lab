@@ -14,8 +14,8 @@ Status: `todo`, `doing`, `done`, `blocked`. Milestones are in [PLAN.md](PLAN.md)
 | T-021 | M2 | Bicep: ACR, App Configuration (derived keys only), Key Vault, Azure OpenAI, issuer storage, identities with kind federated credentials, role assignments, budget | done |
 | T-022 | M2 | Config seed file and `docs/RUNBOOK.md` M2 steps: resource group, deploy, secret, seed | done |
 | T-023 | M2 | Make targets `infra-lint`, `infra-whatif`, `infra-deploy` with environment checks | done |
-| T-030 | M3 | Helm charts for api and indexer | todo |
-| T-031 | M3 | `make publish`: build, push images, package and push charts | todo |
+| T-030 | M3 | Helm charts for api and indexer | done |
+| T-031 | M3 | `make publish`: build, push images, package and push charts | done |
 | T-040 | M4 | kind cluster script and `make local-up`, `make local-down` | todo |
 | T-041 | M4 | Argo CD bootstrap and root app for `local` | todo |
 | T-042 | M4 | Envoy Gateway and the `gateway` chart | todo |

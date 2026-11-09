@@ -60,3 +60,22 @@ az appconfig kv list "${SUB[@]}" --name "$CONFIG" --auth-mode login --label loca
 ```
 
 The list shows the seeded keys and the three that Bicep created.
+
+## M3: Publish images and charts
+
+Needs M2 deployed and Docker running. Load `.lab.env` as in M2.
+
+```bash
+make chart-lint chart-template
+make publish
+```
+
+`publish` builds both images, signs in to ACR with your Azure login, pushes `api` and `indexer` at `0.1.0`, and
+pushes the two charts to `oci://<acr>/charts`. Check the result:
+
+```bash
+ACR=$(out acrName)
+az acr repository list "${SUB[@]}" --name "$ACR" -o tsv
+```
+
+The list shows `api`, `indexer`, `charts/api` and `charts/indexer`.

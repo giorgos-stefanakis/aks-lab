@@ -1,4 +1,9 @@
 APPS := apps/api apps/indexer
+CHARTS := api indexer
+ENVS := local aks-dev
+# Images and charts share the chart version. Bump it in Chart.yaml and gitops/envs together.
+VERSION := $(shell sed -n 's/^version: //p' charts/api/Chart.yaml)
+HELM ?= helm
 
 -include .lab.env
 export LAB_TENANT_ID LAB_SUBSCRIPTION_ID LAB_LOCATION LAB_RESOURCE_GROUP LAB_BUDGET_EMAIL LAB_OWNER_OBJECT_ID
@@ -6,7 +11,7 @@ export LAB_TENANT_ID LAB_SUBSCRIPTION_ID LAB_LOCATION LAB_RESOURCE_GROUP LAB_BUD
 DEPLOY_ARGS = --subscription $(LAB_SUBSCRIPTION_ID) --location $(LAB_LOCATION) --name main \
 	--template-file infra/main.bicep --parameters infra/params/lab.bicepparam
 
-.PHONY: init test lint format images infra-lint infra-whatif infra-deploy check-lab-env
+.PHONY: init test lint format images infra-lint infra-whatif infra-deploy check-lab-env chart-lint chart-template publish
 
 init test lint format:
 	@for app in $(APPS); do $(MAKE) -C $$app $@ || exit 1; done
@@ -32,3 +37,25 @@ infra-whatif: check-lab-env
 
 infra-deploy: check-lab-env
 	az deployment sub create $(DEPLOY_ARGS) --confirm-with-what-if
+
+chart-lint:
+	@for env in $(ENVS); do for chart in $(CHARTS); do \
+		$(HELM) lint charts/$$chart -f gitops/envs/$$env/$$chart.yaml || exit 1; \
+	done; done
+
+chart-template:
+	@for env in $(ENVS); do for chart in $(CHARTS); do \
+		$(HELM) template $$chart charts/$$chart --namespace lab -f gitops/envs/$$env/$$chart.yaml > /dev/null || exit 1; \
+	done; done; echo "rendered: $(ENVS)"
+
+# Owner runs this. Images and charts share VERSION; CI replaces the manual tag in M5.
+publish: check-lab-env chart-lint chart-template
+	acr=$$(az deployment sub show --subscription $(LAB_SUBSCRIPTION_ID) -n main --query properties.outputs.acrLoginServer.value -o tsv) && \
+	az acr login --subscription $(LAB_SUBSCRIPTION_ID) --name $${acr%%.*} && \
+	for app in api indexer; do \
+		$(MAKE) -C apps/$$app image IMAGE=$$acr/$$app:$(VERSION) && docker push $$acr/$$app:$(VERSION) || exit 1; \
+	done && \
+	mkdir -p dist && for chart in $(CHARTS); do \
+		$(HELM) package charts/$$chart --destination dist && \
+		$(HELM) push dist/$$chart-$(VERSION).tgz oci://$$acr/charts || exit 1; \
+	done

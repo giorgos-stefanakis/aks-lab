@@ -18,5 +18,6 @@ coverage.xml
 
 # Build output
 *.tgz
+dist/
 charts/*/charts/
 infra/**/*.json
