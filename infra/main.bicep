@@ -16,6 +16,9 @@ param budgetStart string
 @description('Entra object ID of the person who sets secrets, edits settings and uploads the issuer files.')
 param ownerObjectId string
 
+@description('GitHub repository as owner/name.')
+param githubRepository string
+
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: resourceGroupName
   location: location
@@ -34,6 +37,7 @@ module resources 'resources.bicep' = {
     budgetEmail: budgetEmail
     budgetStart: budgetStart
     ownerObjectId: ownerObjectId
+    githubRepository: githubRepository
   }
 }
 

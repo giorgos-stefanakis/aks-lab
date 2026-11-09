@@ -22,6 +22,9 @@ param ownerObjectId string
 @description('Namespace of the api and indexer service accounts on kind.')
 param localWorkloadNamespace string = 'lab'
 
+@description('GitHub repository as owner/name.')
+param githubRepository string
+
 var tags = { purpose: 'lab' }
 var labels = ['local', 'aks-dev']
 
@@ -70,6 +73,7 @@ module identities 'modules/identities.bicep' = {
     localIssuerUrl: issuer.outputs.issuerUrl
     localWorkloadNamespace: localWorkloadNamespace
     ownerObjectId: ownerObjectId
+    githubRepository: githubRepository
   }
 }
 

@@ -8,6 +8,7 @@ param issuerStorageName string
 param localIssuerUrl string
 param localWorkloadNamespace string
 param ownerObjectId string
+param githubRepository string
 
 var roles = {
   appConfigDataReader: '516239f1-63e1-4d78-a4de-a74fb236a071'         // App Configuration Data Reader
@@ -53,7 +54,7 @@ resource eso 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   tags: tags
 }
 
-// Only AcrPush for now. The M5 task adds the roles that what-if on pull requests needs.
+// Pushes images and charts from release tags. Pull requests must never sign in as it: T-052 gives them their own identity.
 resource github 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'id-lab-github'
   location: location
@@ -97,6 +98,18 @@ resource esoKind 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIden
   properties: {
     issuer: localIssuerUrl
     subject: 'system:serviceaccount:external-secrets:external-secrets'
+    audiences: [tokenAudience]
+  }
+}
+
+var githubIssuer = 'https://token.actions.githubusercontent.com'
+
+resource githubRelease 'Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials@2023-01-31' = {
+  parent: github
+  name: 'github-release'
+  properties: {
+    issuer: githubIssuer
+    subject: 'repo:${githubRepository}:environment:release'
     audiences: [tokenAudience]
   }
 }
