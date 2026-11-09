@@ -5,6 +5,10 @@ gatewayClassName: ""
 createGatewayClass: false
 gatewayClassController: gateway.envoyproxy.io/gatewayclass-controller
 
+# Service type of the Envoy proxy. Empty keeps the Envoy Gateway default, LoadBalancer.
+# kind has no load balancer, so a LoadBalancer Service never gets an address there.
+envoyServiceType: ""
+
 # Namespace of the workloads that the routes point to.
 namespace: lab
 

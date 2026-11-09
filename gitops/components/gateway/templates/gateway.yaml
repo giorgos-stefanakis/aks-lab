@@ -5,7 +5,28 @@ metadata:
   name: {{ required "gatewayClassName is required" .Values.gatewayClassName }}
 spec:
   controllerName: {{ .Values.gatewayClassController }}
+  {{- with .Values.envoyServiceType }}
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: lab
+    namespace: {{ $.Values.namespace }}
+  {{- end }}
 ---
+{{- with .Values.envoyServiceType }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: lab
+  namespace: {{ $.Values.namespace }}
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        type: {{ . }}
+---
+{{- end }}
 {{- end }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
