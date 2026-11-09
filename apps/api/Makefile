@@ -1,8 +1,23 @@
 IMAGE ?= aks-lab-api:dev
 
-include ../common.mk
+.PHONY: init test lint format image run docker-run
 
-.PHONY: run docker-run
+init:
+	poetry install
+
+test:
+	poetry run pytest
+
+lint:
+	poetry run ruff check .
+	poetry run ruff format --check .
+
+format:
+	poetry run ruff check --fix .
+	poetry run ruff format .
+
+image:
+	docker build -t $(IMAGE) .
 
 run:
 	LAB_CONFIG_STUB=stub/config.json poetry run uvicorn app.main:app --reload --port 8000
