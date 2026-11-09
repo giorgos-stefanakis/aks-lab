@@ -192,3 +192,42 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   an agent: no repository listing was read.
 - The guard hook scans the text of a Bash command, heredocs included. Edit the Makefile and docs with the Edit tool when
   the text names Azure-facing targets.
+
+## 2026-11-09 (M4 cluster and issuer)
+
+- `kind` v0.33.0 and `kubectl` v1.37.2 are installed in `/usr/local/bin`. kind creates the cluster `aks-lab` from
+  `kindest/node:v1.37.0` in 16 s.
+- Method: `scripts/kind-issuer.sh` makes an RSA key pair in `.local/oidc/` and writes the discovery document and the JWKS.
+  kind mounts the pair over `/etc/kubernetes/pki/sa.key` and `sa.pub`, so kubeadm keeps it. The kubeadm patch sets
+  `service-account-issuer` and `service-account-jwks-uri` with the `v1beta4` list form of `extraArgs`.
+- Verified on kind: `/.well-known/openid-configuration` returns the lab issuer, and a token for audience
+  `api://AzureADTokenExchange` carries that `iss`, `sub: system:serviceaccount:lab:probe` and a `kid` equal to the
+  `kid` in the generated JWKS.
+- Not yet verified: that Entra accepts the tokens. The documents are not published yet (the blob URL returns 404), and
+  the first real token exchange comes with the api pod.
+- The owner ran `make local-issuer-publish`. Verified by an agent: both documents answer 200 with
+  `application/json` at the public URL and match `.local/oidc` byte for byte. `make local-up` passes its publish check.
+  Entra acceptance of the tokens is still unverified until a pod exchanges one.
+- Verified: `helm show chart` finds `gateway-helm` v1.10.0 on Docker Hub (OCI) and `argo-cd` 10.17.0 in argo-helm.
+  Both projects are Apache 2.0. The `gateway` chart in `gitops/platform/gateway` lints and renders for both envs.
+- Layout choice: the root app has two sources, `gitops/platform/local` (platform Applications) and `gitops/apps/local`
+  (api and indexer). The Applications and the root app still carry the placeholder `git@github.com:OWNER/aks-lab.git`.
+  Argo applies sync waves: Envoy Gateway 0, gateway chart 1, workloads 2.
+- Unverified: Argo CD syncing an OCI Helm chart from `docker.io/envoyproxy` without a repository secret, and the
+  multi-source `$values` reference with a chart from ACR. Both need the running cluster.
+- The owner created the GitHub repository `giorgos-stefanakis/aks-lab`. The Applications now use its SSH URL.
+- Supersedes the placeholder bullet above: the repo URL placeholder is gone, and every Application uses
+  `git@github.com:giorgos-stefanakis/aks-lab.git`.
+- Review fixes. Correction to the last bullet of this entry: the key file is mode 0600 now, not 0644. The kind API
+  server reads it, because the cluster came up and a token carries the expected `kid`. The API server returns compact
+  JSON for `/.well-known/openid-configuration`, so scripts compare parsed JSON (`jq -S`), not bytes.
+- `local-up` now stops when an existing cluster serves a different issuer document than `.local/oidc`. The bootstrap
+  also registers `docker.io/envoyproxy` as an OCI repository, because Argo CD pulls OCI Helm charts only from
+  registered repositories. Unverified: that this is enough for Docker Hub.
+- T-040 is back to `doing` until `make local-up` runs end to end, including the Argo CD install.
+- Makefile cleanup: the root Makefile is the entry point. `make` prints the help. Public targets: `init`, `lint`,
+  `test`, `format`, `infra-whatif`, `infra-deploy`, `publish`, `local-issuer-publish`, `local-up`, `local-down`.
+  `lint` now includes Helm lint and render for all charts and both envs, and the Bicep lint. Removed `images`,
+  `infra-lint`, `chart-lint`, `chart-template`, `local-issuer` and `check-lab-env`. The checks that remain are
+  underscore targets and stay out of the help. Earlier entries use the old names. `make lint` exits 0.
+- The private key file was mode 0644 when first written (see the correction above) so the API server can read it inside the node. It sits in `.local/`, which git ignores.

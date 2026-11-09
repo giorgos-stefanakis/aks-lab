@@ -66,7 +66,7 @@ The list shows the seeded keys and the three that Bicep created.
 Needs M2 deployed and Docker running. Load `.lab.env` as in M2.
 
 ```bash
-make chart-lint chart-template
+make lint
 make publish
 ```
 
@@ -79,3 +79,46 @@ az acr repository list "${SUB[@]}" --name "$ACR" -o tsv
 ```
 
 The list shows `api`, `indexer`, `charts/api` and `charts/indexer`.
+
+## M4: Local cluster
+
+Needs `kind`, `kubectl` and `helm` on `PATH`, and Docker running.
+
+### 1. Publish the issuer
+
+The kind cluster signs service-account tokens with a key pair that stays in `.local/` (ignored by git). Entra checks
+those tokens against two public documents in the issuer storage account. Publish them before the cluster starts.
+
+Add the issuer URL to `.lab.env` (no trailing slash), then load it again:
+
+```bash
+echo "LAB_ISSUER_URL=$(out localIssuerUrl)" >> .lab.env
+set -a; source .lab.env; set +a
+make local-issuer-publish
+```
+
+The target makes the key pair and the documents, uploads both files, and reads them back over HTTPS to compare.
+Your account needs `Storage Blob Data Contributor` on the account, which Bicep grants. A 403 right after the deploy
+usually means the role has not propagated yet: retry in a few minutes.
+
+The key pair is the identity of the cluster. Keep `.local/oidc/sa.key`. If you delete it, publish the new documents
+again and recreate the cluster.
+
+### 2. Give Argo CD read access to the repository
+
+Argo CD reads the GitHub repository over SSH with a read-only deploy key. The private half stays in
+`.local/argocd-deploy-key`. Generate it with `ssh-keygen -t ed25519 -N "" -f .local/argocd-deploy-key`. Add
+`.local/argocd-deploy-key.pub` in the repository under Settings, Deploy keys. Leave "Allow write access" off.
+
+The Applications under `gitops/` point at `git@github.com:giorgos-stefanakis/aks-lab.git`. Push `main` before
+`make local-up`, because Argo syncs from `main`, not from your working tree.
+
+### 3. Create the cluster
+
+```bash
+make local-up
+```
+
+`local-up` creates the cluster, installs Argo CD and applies the root app. It stops when the published issuer document
+differs from `.local/oidc`, or when an existing cluster uses another issuer. In the second case run `make local-down`
+first. `make local-down` deletes the cluster and keeps the key pair.
