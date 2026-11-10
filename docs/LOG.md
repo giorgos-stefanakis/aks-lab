@@ -431,3 +431,15 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
 - Argo CD installed. The `root` app reports `Sync Unknown`: `gitops/clusters/aks-dev/platform: app path does not exist`.
   The repo server reaches GitHub and checks out `main`, but `main` does not hold `gitops/clusters/aks-dev` yet. The
   Gateway CRDs are missing for the same reason. Fix: push the `aks-dev` gitops files to `main`.
+- After `main` held `gitops/clusters/aks-dev`: all five Applications `Synced` and `Healthy`. Gateway `lab` (class
+  `envoy`) is `Programmed` at `4.165.97.175`, the external IP of the Envoy LoadBalancer Service.
+  `curl http://4.165.97.175/config` returns 200 with label `aks-dev` and `secret: resolved`.
+- Settles two of the unverified items: `kubelogin convert-kubeconfig` accepts `--context`, and the Azure load balancer
+  probe is healthy with Envoy's default `externalTrafficPolicy: Local`. Still open: that the address is the static
+  `pip-lab-gateway` and not a dynamic IP, and that the cloud provider left the DNS label.
+- `pip-lab-gateway` has IP `4.165.97.175` and FQDN `aks-lab-yntm5u.swedencentral.cloudapp.azure.com`. The gateway
+  address is the static IP, so `Network Contributor` on the resource group lets the cloud provider bind it, and the
+  cloud provider leaves the DNS label set by Bicep. This closes the M6 unverified items. The endpoint serves plain
+  HTTP only until M7.
+- The owner ran the plugin migration on the live lab: the `main` what-if and the `kind` what-if both passed, and both
+  deploys worked. The `aks` stack was a first deploy, so it did not exercise adoption. This closes T-065.
