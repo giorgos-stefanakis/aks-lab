@@ -1,12 +1,13 @@
 targetScope = 'resourceGroup'
 
+import { acrName, appConfigName, keyVaultName, openAiModel, openAiName } from 'common.bicep'
+
 @description('Region for all resources.')
 param location string = resourceGroup().location
 
 @description('Short suffix that keeps global names unique.')
 param suffix string = take(uniqueString(resourceGroup().id), 6)
 
-param openAiModel string = 'gpt-5-mini'
 param openAiModelVersion string = '2025-08-07'
 param openAiCapacity int = 10
 
@@ -16,32 +17,28 @@ param budgetEmail string
 @description('First day of a month. Fixed so that redeploys do not change it.')
 param budgetStart string
 
-@description('Entra object ID of the person who sets secrets, edits settings and uploads the issuer files.')
+@description('Entra object ID of the person who sets secrets and edits settings.')
 param ownerObjectId string
-
-@description('Namespace of the api and indexer service accounts on kind.')
-param localWorkloadNamespace string = 'lab'
 
 @description('GitHub repository as owner@ownerId/name@repoId, the form GitHub puts in OIDC subjects.')
 param githubRepository string
 
 var tags = { purpose: 'lab' }
-var labels = ['local', 'aks-dev']
 
 module acr 'modules/acr.bicep' = {
   name: 'acr'
-  params: { name: 'acrlab${suffix}', location: location, tags: tags }
+  params: { name: acrName(suffix), location: location, tags: tags }
 }
 
 module keyVault 'modules/keyvault.bicep' = {
   name: 'keyvault'
-  params: { name: 'kv-lab-${suffix}', location: location, tags: tags }
+  params: { name: keyVaultName(suffix), location: location, tags: tags, ownerObjectId: ownerObjectId }
 }
 
 module openAi 'modules/openai.bicep' = {
   name: 'openai'
   params: {
-    name: 'oai-lab-${suffix}'
+    name: openAiName(suffix)
     location: location
     tags: tags
     modelName: openAiModel
@@ -50,14 +47,9 @@ module openAi 'modules/openai.bicep' = {
   }
 }
 
-module issuer 'modules/issuer.bicep' = {
-  name: 'issuer'
-  params: { name: 'stlab${suffix}', location: location, tags: tags }
-}
-
 module appConfig 'modules/appconfig.bicep' = {
   name: 'appconfig'
-  params: { name: 'appcs-lab-${suffix}', location: location, tags: tags }
+  params: { name: appConfigName(suffix), location: location, tags: tags, ownerObjectId: ownerObjectId }
 }
 
 module identities 'modules/identities.bicep' = {
@@ -69,25 +61,12 @@ module identities 'modules/identities.bicep' = {
     appConfigName: appConfig.outputs.name
     keyVaultName: keyVault.outputs.name
     openAiName: openAi.outputs.name
-    issuerStorageName: issuer.outputs.name
-    localIssuerUrl: issuer.outputs.issuerUrl
-    localWorkloadNamespace: localWorkloadNamespace
-    ownerObjectId: ownerObjectId
-    githubRepository: githubRepository
   }
 }
 
-// After identities: the owner's Data Owner role must exist before ARM writes key values in pass-through mode.
-module appConfigValues 'modules/appconfig-values.bicep' = {
-  name: 'appconfig-values'
-  dependsOn: [identities]
-  params: {
-    storeName: appConfig.outputs.name
-    labels: labels
-    openAiEndpoint: openAi.outputs.endpoint
-    openAiDeployment: openAi.outputs.deployment
-    secretUri: keyVault.outputs.secretUri
-  }
+module github 'modules/github.bicep' = {
+  name: 'github'
+  params: { location: location, tags: tags, acrName: acr.outputs.name, githubRepository: githubRepository }
 }
 
 module budget 'modules/budget.bicep' = {
@@ -103,6 +82,4 @@ output keyVaultName string = keyVault.outputs.name
 output secretName string = keyVault.outputs.secretName
 output openAiName string = openAi.outputs.name
 output openAiEndpoint string = openAi.outputs.endpoint
-output issuerStorageName string = issuer.outputs.name
-output localIssuerUrl string = issuer.outputs.issuerUrl
-output identityClientIds object = identities.outputs.clientIds
+output identityClientIds object = union(identities.outputs.clientIds, { github: github.outputs.clientId })

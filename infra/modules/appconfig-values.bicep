@@ -1,34 +1,31 @@
-param storeName string
-param labels array
-param openAiEndpoint string
-param openAiDeployment string
-param secretUri string
+import { appConfigName, keyVaultName, openAiModel, openAiName, secretName } from '../common.bicep'
 
-// Only values that derive from other resources. Tunable values come from config/seed.json (see docs/RUNBOOK.md),
-// so edits in the portal survive a redeploy.
+param suffix string
+param label string
+
+resource store 'Microsoft.AppConfiguration/configurationStores@2024-05-01' existing = { name: appConfigName(suffix) }
+resource openAi 'Microsoft.CognitiveServices/accounts@2024-10-01' existing = { name: openAiName(suffix) }
+resource vault 'Microsoft.KeyVault/vaults@2023-07-01' existing = { name: keyVaultName(suffix) }
+
 var settings = [
-  { key: 'lab:openai:endpoint', value: openAiEndpoint, contentType: '' }
-  { key: 'lab:openai:deployment', value: openAiDeployment, contentType: '' }
-  {
-    key: 'lab:secret'
-    value: string({ uri: secretUri })
-    contentType: 'application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8'
-  }
+  { key: 'lab:openai:endpoint', contentType: '' }
+  { key: 'lab:openai:deployment', contentType: '' }
+  { key: 'lab:secret', contentType: 'application/vnd.microsoft.appconfig.keyvaultref+json;charset=utf-8' }
 ]
 
-// One copy of every setting per label.
-var entries = flatten(map(labels, label => map(settings, s => union(s, { label: label }))))
+var valueOf = {
+  'lab:openai:endpoint': openAi.properties.endpoint
+  'lab:openai:deployment': openAiModel
+  'lab:secret': string({ uri: '${vault.properties.vaultUri}secrets/${secretName}' })
+}
 
-resource store 'Microsoft.AppConfiguration/configurationStores@2024-05-01' existing = { name: storeName }
-
-// The caller needs the Data Owner role before this module runs. resources.bicep orders it after the identities module.
 resource values 'Microsoft.AppConfiguration/configurationStores/keyValues@2024-05-01' = [
-  for e in entries: {
+  for s in settings: {
     parent: store
-    name: '${e.key}$${e.label}'
+    name: '${s.key}$${label}'
     properties: {
-      value: e.value
-      contentType: empty(e.contentType) ? null : e.contentType
+      value: valueOf[s.key]
+      contentType: empty(s.contentType) ? null : s.contentType
     }
   }
 ]

@@ -3,7 +3,6 @@ targetScope = 'subscription'
 param location string
 param resourceGroupName string
 
-param openAiModel string = 'gpt-5-mini'
 param openAiModelVersion string = '2025-08-07'
 param openAiCapacity int = 10
 
@@ -13,7 +12,7 @@ param budgetEmail string
 @description('First day of a month. Fixed so that redeploys do not change it.')
 param budgetStart string
 
-@description('Entra object ID of the person who sets secrets, edits settings and uploads the issuer files.')
+@description('Entra object ID of the person who sets secrets and edits settings.')
 param ownerObjectId string
 
 @description('GitHub repository as owner@ownerId/name@repoId, the form GitHub puts in OIDC subjects.')
@@ -30,7 +29,6 @@ module resources 'resources.bicep' = {
   scope: rg
   params: {
     location: location
-    openAiModel: openAiModel
     openAiModelVersion: openAiModelVersion
     openAiCapacity: openAiCapacity
     budgetAmount: budgetAmount
@@ -50,6 +48,4 @@ output keyVaultName string = resources.outputs.keyVaultName
 output secretName string = resources.outputs.secretName
 output openAiName string = resources.outputs.openAiName
 output openAiEndpoint string = resources.outputs.openAiEndpoint
-output issuerStorageName string = resources.outputs.issuerStorageName
-output localIssuerUrl string = resources.outputs.localIssuerUrl
 output identityClientIds object = resources.outputs.identityClientIds

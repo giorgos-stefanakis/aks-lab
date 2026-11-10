@@ -6,7 +6,7 @@
 set -euo pipefail
 umask 077
 
-issuer="${LAB_ISSUER_URL:?Set LAB_ISSUER_URL in .lab.env (Bicep output localIssuerUrl)}"
+issuer="${LAB_ISSUER_URL:?Set LAB_ISSUER_URL in .lab.env (output issuerUrl of the kind stack)}"
 issuer="${issuer%/}"
 out="$(cd "$(dirname "$0")/.." && pwd)/.local/oidc"
 mkdir -p "$out/.well-known" "$out/openid/v1"

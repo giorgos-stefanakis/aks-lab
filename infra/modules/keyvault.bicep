@@ -1,8 +1,9 @@
+import { roles, secretName } from '../common.bicep'
+
 param name string
 param location string
 param tags object
-
-var secretName = 'lab-demo'
+param ownerObjectId string
 
 resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: name
@@ -17,7 +18,15 @@ resource vault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
+resource ownerVault 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: vault
+  name: guid(vault.id, ownerObjectId, roles.keyVaultSecretsOfficer)
+  properties: {
+    principalId: ownerObjectId
+    principalType: 'User'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roles.keyVaultSecretsOfficer)
+  }
+}
+
 output name string = vault.name
 output secretName string = secretName
-// The secret value is set by the owner, never by a template. This versionless URI points at it before it exists.
-output secretUri string = '${vault.properties.vaultUri}secrets/${secretName}'

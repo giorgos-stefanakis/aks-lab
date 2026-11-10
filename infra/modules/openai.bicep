@@ -29,4 +29,3 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2024-10-01
 
 output name string = account.name
 output endpoint string = account.properties.endpoint
-output deployment string = deployment.name
