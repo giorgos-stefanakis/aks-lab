@@ -1,0 +1,14 @@
+dex:
+  enabled: false
+notifications:
+  enabled: false
+configs:
+  params:
+    server.insecure: true
+repoServer:
+  serviceAccount:
+    name: argocd-repo-server
+    annotations:
+      azure.workload.identity/client-id: "9594e9e7-4a5e-4452-93a3-c50648aeb2b6"
+  podLabels:
+    azure.workload.identity/use: "true"
