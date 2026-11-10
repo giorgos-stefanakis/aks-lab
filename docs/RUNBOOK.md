@@ -129,7 +129,8 @@ Argo CD reads the GitHub repository over SSH with a read-only deploy key. The pr
 `.local/argocd-deploy-key`. Generate it with `ssh-keygen -t ed25519 -N "" -f .local/argocd-deploy-key`. Add
 `.local/argocd-deploy-key.pub` in the repository under Settings, Deploy keys. Leave "Allow write access" off.
 
-The Applications under `gitops/` point at `git@github.com:giorgos-stefanakis/aks-lab.git`. Push `main` before
+The `aks-dev` Applications under `gitops/` point at `git@github.com:giorgos-stefanakis/aks-lab.git`. The `local` ones use
+`ssh://git@ssh.github.com:443/giorgos-stefanakis/aks-lab.git`, for networks that block port 22. Push `main` before
 `make local-up`, because Argo syncs from `main`, not from your working tree.
 
 ### 4. Create the cluster

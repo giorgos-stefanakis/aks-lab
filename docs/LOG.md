@@ -456,3 +456,9 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
 ## M7: public ingress
 
 - `helm lint` passes on the `gateway` chart with the `aks-dev` values, and the `local` render holds no TLS objects.
+- Cause of the recurring kind `DeadlineExceeded` (supersedes the "transient" and IPv6 notes above): the repo server
+  cannot open TCP port 22 to GitHub. Its log shows `failed to list refs: dial tcp 140.82.121.3:22: connect: connection
+  timed out`, after about 135 s, which exceeds the 60 s manifest deadline. From the repo-server pod and from the host,
+  `github.com:22` times out, while `github.com:443`, `ssh.github.com:443` and the ACR endpoint on 443 connect. So the
+  block is on the workstation network, not in Argo CD. Apps served from the manifest cache stay `Synced`. Apps that
+  need a fresh git fetch (`acr-pull`) or a fresh resolve (`api`) go `Unknown`. AKS is not affected.

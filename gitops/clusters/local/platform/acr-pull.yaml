@@ -9,7 +9,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+    repoURL: ssh://git@ssh.github.com:443/giorgos-stefanakis/aks-lab.git
     targetRevision: main
     path: gitops/components/acr-pull
   destination:

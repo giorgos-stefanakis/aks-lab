@@ -9,7 +9,7 @@ context="${2:?kube context}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dir="$root/gitops/clusters/$cluster"
 key="$root/.local/argocd-deploy-key"
-repo="$(sed -n 's|^ *- repoURL: \(git@.*\)$|\1|p' "$dir/root.yaml" | head -1)"
+repo="$(sed -n 's|^ *- repoURL: \(.*git@.*\)$|\1|p' "$dir/root.yaml" | head -1)"
 
 test -f "$key" || { echo "Missing $key. Create the deploy key first (docs/RUNBOOK.md, M4)." >&2; exit 1; }
 case "$repo" in *OWNER*|"") echo "Set the repo URL in gitops/ first (it still has a placeholder)." >&2; exit 1 ;; esac

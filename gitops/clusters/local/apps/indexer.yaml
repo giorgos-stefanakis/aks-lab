@@ -14,7 +14,7 @@ spec:
       targetRevision: 0.2.2
       helm:
         valueFiles: [$values/gitops/envs/local/indexer.yaml]
-    - repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+    - repoURL: ssh://git@ssh.github.com:443/giorgos-stefanakis/aks-lab.git
       targetRevision: main
       ref: values
   destination:

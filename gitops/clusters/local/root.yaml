@@ -1,3 +1,4 @@
+# SSH over port 443: the workstation network blocks port 22 to GitHub (docs/LOG.md).
 # Applied once by `make local-up`. Argo then manages everything under the two paths below.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -8,10 +9,10 @@ metadata:
 spec:
   project: default
   sources:
-    - repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+    - repoURL: ssh://git@ssh.github.com:443/giorgos-stefanakis/aks-lab.git
       targetRevision: main
       path: gitops/clusters/local/platform
-    - repoURL: git@github.com:giorgos-stefanakis/aks-lab.git
+    - repoURL: ssh://git@ssh.github.com:443/giorgos-stefanakis/aks-lab.git
       targetRevision: main
       path: gitops/clusters/local/apps
   destination:
