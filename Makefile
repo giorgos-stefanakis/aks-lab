@@ -6,12 +6,16 @@ HELM ?= helm
 ISSUER_URL = $(patsubst %/,%,$(LAB_ISSUER_URL))
 
 -include .lab.env
-export LAB_TENANT_ID LAB_SUBSCRIPTION_ID LAB_LOCATION LAB_RESOURCE_GROUP LAB_BUDGET_EMAIL LAB_OWNER_OBJECT_ID LAB_ISSUER_URL
+export LAB_TENANT_ID LAB_SUBSCRIPTION_ID LAB_LOCATION LAB_RESOURCE_GROUP LAB_BUDGET_EMAIL LAB_OWNER_OBJECT_ID LAB_ISSUER_URL LAB_AKS_NODE_COUNT
 
 DEPLOY_ARGS = --subscription $(LAB_SUBSCRIPTION_ID) --location $(LAB_LOCATION) --name main \
 	--template-file infra/main.bicep --parameters infra/params/lab.bicepparam
+RG_ARGS = --subscription $(LAB_SUBSCRIPTION_ID) --resource-group $(LAB_RESOURCE_GROUP)
+KIND_ARGS = $(RG_ARGS) --name kind --template-file infra/clusters/kind.bicep --parameters infra/params/kind.bicepparam
+AKS_ARGS = $(RG_ARGS) --name aks --template-file infra/clusters/aks.bicep --parameters infra/params/aks.bicepparam
 
-.PHONY: help init lint test format infra-whatif infra-deploy publish local-issuer-publish local-up local-down \
+.PHONY: help init lint test format infra-whatif infra-deploy publish \
+	kind-whatif kind-deploy kind-drop local-issuer-publish local-up local-down aks-whatif aks-up aks-down \
 	_check-env _lint-apps _lint-charts _lint-infra
 
 help: ## Show this list
@@ -49,6 +53,33 @@ publish: ## Push both images and both charts to ACR at VERSION. The release job 
 		$(HELM) package charts/$$chart --version $(VERSION) --app-version $(VERSION) --destination dist && \
 		$(HELM) push dist/$$chart-$(VERSION).tgz oci://$$acr/charts || exit 1; \
 	done
+
+##@ AKS plugin (the owner runs these; never run two plugin deploys at once)
+aks-whatif: _check-env ## Preview the aks stack. Changes nothing.
+	az deployment group what-if $(AKS_ARGS)
+
+# A stack has no what-if of its own, so the deploy targets show a deployment what-if of the same template first.
+aks-up: aks-whatif ## Deploy the aks stack after a what-if and a confirmation, fetch credentials, install Argo CD
+	@read -r -p "Deploy the aks stack? [y/N] " answer && [ "$$answer" = y ]
+	az stack group create $(AKS_ARGS) --action-on-unmanage deleteResources --deny-settings-mode none --yes
+	scripts/aks-up.sh
+
+aks-down: _check-env ## Delete the aks stack: the cluster, its IP, its roles, credentials and aks-dev key values
+	az stack group delete $(RG_ARGS) --name aks --action-on-unmanage deleteResources
+	-kubectl config delete-context aks-lab
+	-kubectl config delete-cluster aks-lab
+	-kubectl config delete-user clusterUser_$(LAB_RESOURCE_GROUP)_aks-lab
+
+##@ Kind plugin: the Azure side of the local cluster (the owner runs these)
+kind-whatif: _check-env ## Preview the kind stack. Changes nothing.
+	az deployment group what-if $(KIND_ARGS)
+
+kind-deploy: kind-whatif ## Deploy the kind stack after a what-if and a confirmation
+	@read -r -p "Deploy the kind stack? [y/N] " answer && [ "$$answer" = y ]
+	az stack group create $(KIND_ARGS) --action-on-unmanage deleteResources --deny-settings-mode none --yes
+
+kind-drop: _check-env ## Delete the kind stack: issuer storage, ESO identity, kind credentials and local key values
+	az stack group delete $(RG_ARGS) --name kind --action-on-unmanage deleteResources
 
 ##@ Local cluster (kind)
 local-issuer-publish: _check-env ## Make the cluster signing key and upload its public OIDC documents (once)
@@ -90,3 +121,8 @@ _lint-infra:
 		az bicep lint --file infra/main.bicep
 	LAB_BUDGET_EMAIL=$${LAB_BUDGET_EMAIL:-lint@example.invalid} LAB_OWNER_OBJECT_ID=$${LAB_OWNER_OBJECT_ID:-00000000-0000-0000-0000-000000000000} \
 		az bicep build-params --file infra/params/lab.bicepparam --stdout > /dev/null
+	@for c in kind aks; do \
+		az bicep lint --file infra/clusters/$$c.bicep && \
+		LAB_OWNER_OBJECT_ID=$${LAB_OWNER_OBJECT_ID:-00000000-0000-0000-0000-000000000000} \
+			az bicep build-params --file infra/params/$$c.bicepparam --stdout > /dev/null || exit 1; \
+	done
