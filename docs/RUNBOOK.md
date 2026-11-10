@@ -1,7 +1,7 @@
 # Runbook
 
 Setup steps the owner runs by hand. Agents do not run them. Sections are added as milestones land.
-The acceptance walk-through lives in `docs/DEMO.md`.
+The acceptance checks and their results are in the [README](../README.md).
 
 ## M2: Azure control plane
 
