@@ -7,3 +7,4 @@ envoyService:
 tls:
   enabled: true
   host: aks-lab-yntm5u.swedencentral.cloudapp.azure.com
+  acmeServer: https://acme-v02.api.letsencrypt.org/directory
