@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-24.04
     environment: release
     permissions:
-      contents: write  # create the GitHub release
-      id-token: write  # sign in to Azure with OIDC
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -69,8 +69,7 @@ jobs:
         run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
-      # Pushes made with GITHUB_TOKEN start no workflow, so this commit does not trigger a new run.
-      - name: Deploy to local
+      - name: Deploy to every cluster
         env:
           VERSION: ${{ steps.tag.outputs.version }}
         run: |
@@ -83,11 +82,13 @@ jobs:
               echo "local runs $current; $VERSION is not newer. Nothing to deploy."
               exit 0
             fi
-            for app in api indexer; do
-              sed -i -E "/^ *chart: $app$/{n;s/^( *targetRevision: ).*/\1$VERSION/}" "gitops/clusters/local/apps/$app.yaml"
+            for cluster in local aks-dev; do
+              for app in api indexer; do
+                sed -i -E "/^ *chart: $app$/{n;s/^( *targetRevision: ).*/\1$VERSION/}" "gitops/clusters/$cluster/apps/$app.yaml"
+              done
             done
             git diff --quiet && { echo "::error::No targetRevision changed"; exit 1; }
-            git commit -am "chore(gitops): deploy v$VERSION to local"
+            git commit -am "chore(gitops): deploy v$VERSION to local and aks-dev"
             git push origin main && exit 0
             echo "main moved; retrying"
           done
