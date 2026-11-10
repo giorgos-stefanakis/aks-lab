@@ -1,1 +1,6 @@
-gatewayClassName: approuting-istio
+gatewayClassName: envoy
+createGatewayClass: true
+envoyService:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: rg-aks-lab
+    service.beta.kubernetes.io/azure-pip-name: pip-lab-gateway

@@ -1,13 +1,16 @@
-# GatewayClass of the implementation: `envoy` on kind, `approuting-istio` on AKS.
+# GatewayClass of the implementation. Both clusters run Envoy Gateway.
 gatewayClassName: ""
 
-# Envoy Gateway ships no GatewayClass. AKS app routing provides its own.
+# Envoy Gateway ships no GatewayClass.
 createGatewayClass: false
 gatewayClassController: gateway.envoyproxy.io/gatewayclass-controller
 
-# Service type of the Envoy proxy. Empty keeps the Envoy Gateway default, LoadBalancer.
-# kind has no load balancer, so a LoadBalancer Service never gets an address there.
-envoyServiceType: ""
+# Service of the Envoy proxy. With both fields empty, Envoy Gateway keeps its default, a plain LoadBalancer.
+envoyService:
+  # kind has no load balancer, so a LoadBalancer Service never gets an address there.
+  type: ""
+  # On AKS, annotations bind the load balancer to the static public IP.
+  annotations: {}
 
 # Namespace of the workloads that the routes point to.
 namespace: lab

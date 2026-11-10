@@ -1,3 +1,4 @@
 gatewayClassName: envoy
 createGatewayClass: true
-envoyServiceType: ClusterIP
+envoyService:
+  type: ClusterIP
