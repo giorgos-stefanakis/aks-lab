@@ -19,3 +19,12 @@ namespace: lab
 apiService:
   name: api
   port: 8000
+
+# HTTPS with a Let's Encrypt certificate from cert-manager. Off on kind.
+tls:
+  enabled: false
+  host: ""
+  secretName: lab-tls
+  clusterIssuer: letsencrypt
+  # Staging first: failed production validations are rate-limited. Switch to the production URL after staging issues.
+  acmeServer: https://acme-staging-v02.api.letsencrypt.org/directory

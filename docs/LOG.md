@@ -443,3 +443,16 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   HTTP only until M7.
 - The owner ran the plugin migration on the live lab: the `main` what-if and the `kind` what-if both passed, and both
   deploys worked. The `aks` stack was a first deploy, so it did not exercise adoption. This closes T-065.
+- Release v0.2.2: the release job pushed one deploy commit, `d2fa728`, that pins `local` and `aks-dev` to `0.2.2`. AKS
+  pulled both charts and runs `api:0.2.2` and `indexer:0.2.2`, and `/config` still returns label `aks-dev`. This
+  closes T-063.
+- On kind the `api` and `indexer` Applications carry target `0.2.2` but stay `Sync Unknown` with `DeadlineExceeded` while
+  the repo server generates the chart source. Pods still run `0.2.1`. DNS for ACR, Entra, the issuer storage and GitHub
+  resolves from the repo server, and git sources render. Cause not found. Entra resolves to an IPv6 address first.
+- Correction: kind caught up to `0.2.2` minutes later without further action. All seven Applications are `Synced` and
+  `Healthy` and both pods run `0.2.2`. The `DeadlineExceeded` was transient, most likely the repo server after the
+  restart 141 minutes earlier. The IPv6 lead is unproven and not needed.
+
+## M7: public ingress
+
+- `helm lint` passes on the `gateway` chart with the `aks-dev` values, and the `local` render holds no TLS objects.

@@ -4,3 +4,6 @@ envoyService:
   annotations:
     service.beta.kubernetes.io/azure-load-balancer-resource-group: rg-aks-lab
     service.beta.kubernetes.io/azure-pip-name: pip-lab-gateway
+tls:
+  enabled: true
+  host: aks-lab-yntm5u.swedencentral.cloudapp.azure.com

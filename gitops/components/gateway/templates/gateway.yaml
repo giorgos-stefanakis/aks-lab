@@ -40,6 +40,10 @@ kind: Gateway
 metadata:
   name: lab
   namespace: {{ .Values.namespace }}
+  {{- if .Values.tls.enabled }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.tls.clusterIssuer }}
+  {{- end }}
 spec:
   gatewayClassName: {{ required "gatewayClassName is required" .Values.gatewayClassName }}
   listeners:
@@ -49,6 +53,19 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
+    {{- if .Values.tls.enabled }}
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: {{ required "tls.host is required" .Values.tls.host }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ .Values.tls.secretName }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
