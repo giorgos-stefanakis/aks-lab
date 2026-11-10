@@ -31,7 +31,7 @@ aks-lab/
 │   ├── api/                  FastAPI
 │   └── indexer/              Azure Functions
 ├── charts/                   api, indexer: published to ACR
-├── infra/                    main.bicep, modules/, params/
+├── infra/                    main.bicep (control plane), clusters/ (one stack per cluster), modules/, params/
 ├── gitops/
 │   ├── clusters/             local/, aks-dev/: only Argo Applications
 │   │   └── <cluster>/        root.yaml, argocd-values.yaml, platform/, apps/
@@ -52,4 +52,4 @@ If time runs out, drop work in this order:
 ## Open points
 
 - Model and region for Azure OpenAI: check quota before M2.
-- Node size for AKS: measure kind usage in M4 first.
+- AKS node count: `LAB_AKS_NODE_COUNT`, 1 to 3 `Standard_B2s_v2` nodes, bound by the regional vCPU quota. See [LOG.md](LOG.md).

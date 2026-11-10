@@ -346,3 +346,88 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   M5 is done.
 - Decided with the owner: `aks-dev` gets no promotion pull request. In M6 the release job pins `aks-dev` in the same
   deploy commit as `local` (T-063). This supersedes the promotion bullet in the M5 release flow entry.
+
+## 2026-11-10 (M6 AKS)
+
+- The owner asked for the Azure Verified Module for AKS. Latest is `avm/res/container-service/managed-cluster` 0.14.0
+  (published 2026-07-20, MIT). It deploys `managedClusters@2025-10-01` and builds `ingressProfile` itself: only
+  `webAppRouting` with NGINX. It has no input for the managed Gateway API CRDs or app routing Istio.
+- Bicep 0.49.2 type check: `ingressProfile.gatewayAPI` and `webAppRouting.gatewayAPIImplementations.appRoutingIstio`
+  give `BCP037` at API `2025-10-01` and `2026-01-01`, and are accepted from `2026-02-01`. So a raw resource could set
+  them; AVM cannot.
+- Decided with the owner: AVM for the cluster, and Envoy Gateway on AKS as on kind. GatewayClass `envoy` on both
+  clusters. The Envoy LoadBalancer Service binds the static IP `pip-lab-gateway` in the lab resource group through the
+  `azure-load-balancer-resource-group` and `azure-pip-name` annotations. This departs from SPEC.md (cluster
+  components, `approuting-istio`) and D-09; the owner updates them.
+- AVM 0.14.0 defaults that differ from the lab: `skuTier: Standard`, `publicNetworkAccess: Disabled`,
+  `azurePolicyEnabled: true`, `omsAgentEnabled: true`, `enableTelemetry: true`, `autoUpgradeProfile: stable`.
+  `infra/aks.bicep` overrides each. Workload identity has no flag of its own; it goes through `securityProfile`.
+  `disableLocalAccounts` defaults to `true`, so the cluster uses Entra with Azure RBAC and `kubelogin`.
+- AKS versions in `swedencentral` on 2026-11-10: 1.31 to 1.37, default 1.36 (latest patch 1.36.5). Pinned 1.36.5.
+- Quota in `swedencentral`: 4 regional vCPU, 2 used by VM `lab-vm-test` outside the lab resource group. The Bsv2
+  family limit is 4. Three `Standard_B2s_v2` nodes need 6. Decided with the owner: `LAB_AKS_NODE_COUNT` sets the node
+  count, default 3. `Standard_B2s_v2` has no SKU restrictions for this subscription in `swedencentral`.
+- The AVM module deployment is named `aks-cluster`, not `aks`, so it cannot clash with the top-level deployment
+  `aks` in the same resource group. Not tested with the clashing name.
+- The cluster is its own deployment (`infra/aks.bicep`, deployment name `aks`), so `make aks-down` can remove it
+  without the control plane. The AKS federated credentials sit in it. ESO has none on AKS: the kubelet pulls images.
+- `scripts/local-bootstrap.sh` is now `scripts/argocd-bootstrap.sh <cluster> <context>`. Re-run on kind: every repo
+  secret and the root app report `unchanged`.
+- The gateway chart takes `envoyService.type` and `envoyService.annotations` instead of `envoyServiceType`. The
+  `local` render is byte-identical to the one before.
+- Unverified until the owner deploys: that `Network Contributor` on the resource group lets the cloud provider bind
+  the IP; that the cloud provider leaves the DNS label set by Bicep; that `kubelogin convert-kubeconfig` accepts
+  `--context`; that Envoy Gateway's default `externalTrafficPolicy: Local` gives a healthy Azure load balancer probe.
+
+## 2026-11-10 (Bicep by concern)
+
+- Layout: `infra/names.bicep` exports the shared names, role IDs and token audience. Each resource module grants the
+  owner's role on its own resource (App Configuration, Key Vault, issuer storage). `identities.bicep` holds the three
+  workload identities and their data roles. `github.bicep` and `kind.bicep` (issuer storage, ESO identity) hold what
+  only GitHub or kind needs. `federation.bicep` writes one credential per identity for one issuer; `resources.bicep`
+  calls it for kind and `aks.bicep` for AKS.
+- `appconfig-values.bicep` is gone. It existed only to run the key values after the owner's Data Owner role, which
+  lived in `identities.bicep`. The role is now in `appconfig.bicep`, and the key values depend on it there.
+  This supersedes the module split in the "role assignments in one module" entry.
+- Verified: `az deployment sub what-if` of the refactored `main.bicep` against the live lab equals the what-if of the
+  committed templates: the same 36 resources, no Create or Delete, the same property diffs. So every resource ID and
+  role-assignment name is unchanged. The 21 `Modify` entries in both are what-if noise: references it cannot resolve
+  across modules, and server-side defaults.
+- Found with what-if: passing the nullable AVM output `oidcIssuerUrl` as a module parameter fails with
+  `InvalidTemplate ... parameter 'issuer' ... is not provided` while the cluster does not exist. The same output in a
+  resource property passes. `aks.bicep` reads the issuer from an `existing` reference to the cluster instead. Its
+  what-if then succeeds: 8 creates (cluster, public IP, three role assignments, three `aks` credentials).
+- Federation order: the kind and AKS credentials sit in separate deployments, so they never write to the same
+  identity at the same time.
+- Renamed `infra/names.bicep` to `infra/common.bicep`, because it also holds role IDs and the token audience.
+
+## 2026-11-10 (Clusters as plugins)
+
+- Decided with the owner: each cluster is a plugin. `infra/clusters/kind.bicep` and `infra/clusters/aks.bicep` each
+  hold everything only that cluster needs: federated credentials, cluster-only identities and roles, and the derived
+  key values of its App Configuration label. `main.bicep` keeps only what every cluster shares. This supersedes the
+  layout bullet of the "Bicep by concern" entry, where the kind federation sat in `resources.bicep`.
+- Decided with the owner: each plugin deploys as a deployment stack with `--action-on-unmanage deleteResources` and
+  `--deny-settings-mode none`, so deleting the stack deletes what the plugin added. `main` stays a plain incremental
+  deployment. This departs from D-12 (incremental mode only); the owner updates it.
+- A stack has no `--confirm-with-what-if`, as far as known. The `kind-deploy` and `aks-up` targets run a deployment
+  group what-if on the same template and ask for confirmation first. Unverified: the stack CLI flags, and whether its
+  `--parameters` takes a `.bicepparam` file. The guard hook blocks agents from reading the stack CLI help.
+- Bicep 0.49.2: a loop collection that references `existing` resource properties fails with `BCP178`.
+  `modules/appconfig-values.bicep` loops over static keys and reads the runtime values from a separate map.
+- `federation.bicep` finds identities by name, so Bicep sees no dependency on the ESO identity in the same template.
+  The kind plugin sets `dependsOn: [eso]` on the federation call. A what-if against the live lab cannot show this,
+  because the identity exists.
+- Verified locally: `az bicep lint` and `build-params` pass for `main.bicep` and both plugins. The compiled
+  non-`existing` resources of the new `main.bicep` plus the kind plugin match the committed `main.bicep` one to one.
+  The name and GUID expressions differ only in form: functions from `common.bicep` instead of module parameters, and
+  one credential loop instead of four resources. Not verified against Azure: that needs the owner's what-ifs
+  (docs/RUNBOOK.md, "Moving the live lab to plugins").
+
+## 2026-11-10 (AKS first deploy)
+
+- The `aks` stack deployed and the cluster has two nodes, both `Ready` on v1.36.5 (Ubuntu 24.04, containerd 2.3.7).
+  The pinned version is the live version.
+- Argo CD installed. The `root` app reports `Sync Unknown`: `gitops/clusters/aks-dev/platform: app path does not exist`.
+  The repo server reaches GitHub and checks out `main`, but `main` does not hold `gitops/clusters/aks-dev` yet. The
+  Gateway CRDs are missing for the same reason. Fix: push the `aks-dev` gitops files to `main`.

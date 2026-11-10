@@ -14,7 +14,10 @@ SUB=(--subscription "$LAB_SUBSCRIPTION_ID")
 
 ### 1. Deploy
 
-The template runs at subscription scope. It creates the resource group and everything in it.
+The template runs at subscription scope. It creates the resource group and the control plane: what every cluster
+shares. Each cluster adds its own Azure resources as a plugin, a deployment stack from `infra/clusters/` (M4, M6).
+Dropping a plugin deletes exactly what it added. Never deploy two plugins at once: both write federated credentials on
+the same identities.
 
 ```bash
 make infra-whatif
@@ -59,7 +62,8 @@ az appconfig kv import "${SUB[@]}" --name "$CONFIG" --auth-mode login --yes \
 az appconfig kv list "${SUB[@]}" --name "$CONFIG" --auth-mode login --label local --query "[].key" -o tsv
 ```
 
-The list shows the seeded keys and the three that Bicep created.
+The list shows the seeded keys. Each cluster plugin adds three keys for its label: the OpenAI endpoint and deployment,
+and the Key Vault reference.
 
 ## M3: Publish images and charts
 
@@ -85,7 +89,20 @@ The list shows `api`, `indexer`, `charts/api` and `charts/indexer`.
 
 Needs `kind`, `kubectl` and `helm` on `PATH`, and Docker running.
 
-### 1. Publish the issuer
+### 1. Deploy the kind plugin
+
+The stack `kind` (`infra/clusters/kind.bicep`) holds what only kind needs from Azure: the issuer storage account,
+the ESO identity and its `AcrPull`, the `kind` federated credentials, and the key values of label `local`.
+
+```bash
+make kind-whatif
+make kind-deploy
+```
+
+`kind-deploy` shows the what-if again and asks before it creates or updates the stack. `make kind-drop` deletes the
+stack and everything in it. After a drop and a new deploy, publish the issuer documents again (step 2).
+
+### 2. Publish the issuer
 
 The kind cluster signs service-account tokens with a key pair that stays in `.local/` (ignored by git). Entra checks
 those tokens against two public documents in the issuer storage account. Publish them before the cluster starts.
@@ -93,7 +110,8 @@ those tokens against two public documents in the issuer storage account. Publish
 Add the issuer URL to `.lab.env` (no trailing slash), then load it again:
 
 ```bash
-echo "LAB_ISSUER_URL=$(out localIssuerUrl)" >> .lab.env
+stackout() { az stack group show "${SUB[@]}" -g "$LAB_RESOURCE_GROUP" -n "$1" --query "outputs.$2.value" -o tsv; }
+echo "LAB_ISSUER_URL=$(stackout kind issuerUrl)" >> .lab.env
 set -a; source .lab.env; set +a
 make local-issuer-publish
 ```
@@ -105,7 +123,7 @@ usually means the role has not propagated yet: retry in a few minutes.
 The key pair is the identity of the cluster. Keep `.local/oidc/sa.key`. If you delete it, publish the new documents
 again and recreate the cluster.
 
-### 2. Give Argo CD read access to the repository
+### 3. Give Argo CD read access to the repository
 
 Argo CD reads the GitHub repository over SSH with a read-only deploy key. The private half stays in
 `.local/argocd-deploy-key`. Generate it with `ssh-keygen -t ed25519 -N "" -f .local/argocd-deploy-key`. Add
@@ -114,7 +132,7 @@ Argo CD reads the GitHub repository over SSH with a read-only deploy key. The pr
 The Applications under `gitops/` point at `git@github.com:giorgos-stefanakis/aks-lab.git`. Push `main` before
 `make local-up`, because Argo syncs from `main`, not from your working tree.
 
-### 3. Create the cluster
+### 4. Create the cluster
 
 ```bash
 make local-up
@@ -125,9 +143,9 @@ differs from `.local/oidc`, or when an existing cluster uses another issuer. In 
 first. `make local-down` deletes the cluster and keeps the key pair.
 
 On an existing cluster, `local-up` upgrades Argo CD and re-applies the repository secrets from your working tree.
-Run it again after a change to `gitops/clusters/local/argocd-values.yaml` or `scripts/local-bootstrap.sh`.
+Run it again after a change to `gitops/clusters/local/argocd-values.yaml` or `scripts/argocd-bootstrap.sh`.
 
-### 4. Check the image pull secret
+### 5. Check the image pull secret
 
 The kind kubelet has no Azure identity. External Secrets Operator makes the `acr-pull` secret in `lab`, and the
 workloads pull with it.
@@ -143,7 +161,8 @@ The ExternalSecret shows `SecretSynced`, and the `api` and `indexer` pods run.
 
 A `vX.Y.Z` tag on `main` runs the `release` job in `.github/workflows/apps.yml`. It publishes both images and both
 charts at `X.Y.Z` and creates a GitHub release. Then it sets the chart `targetRevision` in
-`gitops/clusters/local/apps/` to `X.Y.Z` and pushes that commit to `main`. Argo CD syncs it. The chart's image tag
+`gitops/clusters/local/apps/` and `gitops/clusters/aks-dev/apps/` to `X.Y.Z` and pushes that one commit to `main`.
+Argo CD syncs it on each cluster. The chart's image tag
 defaults to its `appVersion`, so that one line sets both the chart and the image. The job skips the commit when
 `local` already runs the same or a newer version.
 
@@ -189,3 +208,69 @@ deploy commit with `git pull --rebase`.
 First release only: the `0.1.0` charts need `image.tag` in the values. Push `main` up to the commit before the one that
 removes `image.tag`, then tag `v0.2.0`. After the job pins `0.2.0`, rebase that last commit onto the deploy commit and
 push it. Pushing it earlier breaks kind, because `0.1.0` charts do not default to `appVersion`.
+
+## M6: AKS
+
+Needs `kubectl`, `helm` and `kubelogin` on `PATH` (`az aks install-cli` installs `kubectl` and `kubelogin`).
+The cluster is the plugin stack `aks` (`infra/clusters/aks.bicep`). It reads the ACR and the identities that
+`main.bicep` made.
+
+### 1. Check the quota
+
+Three `Standard_B2s_v2` nodes need 6 vCPU of regional quota and 6 of the `standardBsv2Family` quota in the region.
+
+```bash
+az vm list-usage "${SUB[@]}" --location "$LAB_LOCATION" -o json \
+  | jq -r '.[] | select(.name.value == "cores" or .name.value == "standardBsv2Family") | [.name.value, .currentValue, .limit] | @tsv'
+```
+
+If the free quota is short, request more in the portal (Quotas, Compute), or set `LAB_AKS_NODE_COUNT=1` in `.lab.env`.
+One node fits the lab: kind used 2.6 GiB with every component running.
+
+### 2. Deploy and bootstrap
+
+Load `.lab.env` as in M2. Push `main` first, because Argo syncs from `main`.
+
+```bash
+make aks-whatif
+make aks-up
+```
+
+The what-if creates the cluster `aks-lab`, the public IP `pip-lab-gateway`, a federated credential named `aks` on
+`id-lab-api`, `id-lab-indexer` and `id-lab-argocd`, `AcrPull` for the kubelet identity, `Network Contributor` on the
+resource group for the cluster identity, `Azure Kubernetes Service RBAC Cluster Admin` for you, and the three key
+values of label `aks-dev`.
+
+`aks-up` shows the what-if again and asks before it creates or updates the stack. Then it writes the kubeconfig context `aks-lab`,
+converts it to `kubelogin` with your az CLI sign-in, installs Argo CD and applies the root app for `aks-dev`. It
+reuses the deploy key from M4. Run it again after a change to `gitops/clusters/aks-dev/argocd-values.yaml`.
+
+### 3. Check
+
+```bash
+kubectl --context aks-lab -n argocd get applications
+kubectl --context aks-lab -n lab get gateway lab
+stackout aks gatewayFqdn
+```
+
+All five Applications are `Synced` and `Healthy`, and the Gateway address is the public IP. Until M7 the gateway
+serves plain HTTP: `curl http://<fqdn>/config` shows label `aks-dev` and `secret: resolved`.
+
+### 4. Drop
+
+```bash
+make aks-down
+```
+
+`aks-down` deletes the stack `aks` and everything it holds: the cluster, the public IP, its role assignments, the
+`aks` federated credentials and the `aks-dev` key values. It asks first. The control plane and kind stay.
+
+## Moving the live lab to plugins
+
+Before the plugin layout, `main` held the kind resources and the key values of both labels. Moving them deletes and
+recreates nothing, because the names stay the same:
+
+1. `make infra-whatif`. Expect no Create and no Delete. The kind resources and the key values now show as `Ignore`:
+   `main` no longer manages them, and incremental mode leaves them in place.
+2. `make kind-whatif`. Expect no Create: the stack adopts the existing resources. Then `make kind-deploy`.
+3. The `aks-dev` key values stay unmanaged until the first `make aks-up` adopts them.

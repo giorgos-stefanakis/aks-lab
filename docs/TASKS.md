@@ -26,9 +26,11 @@ Status: `todo`, `doing`, `done`, `blocked`. Milestones are in [PLAN.md](PLAN.md)
 | T-051 | M5 | `apps.yml`: lint and test on pull requests and `main`; on a `vX.Y.Z` tag, publish images and charts and create the GitHub release | done |
 | T-053 | M5 | Bicep: GitHub federated credential for the `release` environment, limited to `v*` tags | done |
 | T-054 | M5 | Release job pins the chart version for `local` in git; the chart image tag defaults to `appVersion` | done |
-| T-060 | M6 | Bicep: AKS, static public IP, AKS federated credentials, `AcrPull` for the kubelet identity | todo |
-| T-061 | M6 | Argo CD on AKS with workload identity for ACR | todo |
-| T-062 | M6 | Root app for `aks-dev` | todo |
-| T-063 | M6 | Release job pins the chart version for `aks-dev` in the same deploy commit as `local` | todo |
+| T-060 | M6 | Bicep: AKS, static public IP, AKS federated credentials, `AcrPull` for the kubelet identity | doing |
+| T-061 | M6 | Argo CD on AKS with workload identity for ACR | doing |
+| T-062 | M6 | Root app for `aks-dev` | doing |
+| T-063 | M6 | Release job pins the chart version for `aks-dev` in the same deploy commit as `local` | doing |
+| T-064 | M6 | Bicep by concern: shared names, per-resource owner roles, one federation module for both clusters | done |
+| T-065 | M6 | Clusters as plugins: one deployment stack per cluster in `infra/clusters/`, `kind-*` and `aks-down` targets. Check: owner what-ifs show no Create or Delete on the live lab | doing |
 | T-070 | M7 | cert-manager, ClusterIssuer, HTTPS listener | todo |
 | T-080 | M8 | `docs/DEMO.md` and teardown targets | todo |
