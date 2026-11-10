@@ -32,5 +32,5 @@ Status: `todo`, `doing`, `done`, `blocked`. Milestones are in [PLAN.md](PLAN.md)
 | T-063 | M6 | Release job pins the chart version for `aks-dev` in the same deploy commit as `local` | done |
 | T-064 | M6 | Bicep by concern: shared names, per-resource owner roles, one federation module for both clusters | done |
 | T-065 | M6 | Clusters as plugins: one deployment stack per cluster in `infra/clusters/`, `kind-*` and `aks-down` targets. Check: owner what-ifs show no Create or Delete on the live lab | done |
-| T-070 | M7 | cert-manager, ClusterIssuer, HTTPS listener | doing |
+| T-070 | M7 | cert-manager, ClusterIssuer, HTTPS listener | done |
 | T-080 | M8 | `docs/DEMO.md` and teardown targets | todo |

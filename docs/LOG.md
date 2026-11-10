@@ -462,3 +462,9 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   `github.com:22` times out, while `github.com:443`, `ssh.github.com:443` and the ACR endpoint on 443 connect. So the
   block is on the workstation network, not in Argo CD. Apps served from the manifest cache stay `Synced`. Apps that
   need a fresh git fetch (`acr-pull`) or a fresh resolve (`api`) go `Unknown`. AKS is not affected.
+- Verified on AKS (check 8): cert-manager v1.21.3 issued `lab-tls` through the http-01 `gatewayHTTPRoute` solver, first from
+  Let's Encrypt staging and then from production after the issuer switched and the Secret was reissued. `curl
+  https://aks-lab-yntm5u.swedencentral.cloudapp.azure.com/healthz` returns 200 with certificate verification passing.
+  The issuer is `Let's Encrypt` CN=YR1 and the certificate expires 2027-02-08. Staging certificates do not satisfy the
+  browser, so the staging step cost one extra commit. This closes T-070 and M7.
+- kind recovered after the repo URL moved to `ssh.github.com:443`: all seven Applications are `Synced` and `Healthy`.
