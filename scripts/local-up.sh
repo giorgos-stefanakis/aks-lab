@@ -3,7 +3,7 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-issuer="${LAB_ISSUER_URL:?Set LAB_ISSUER_URL in .lab.env (Bicep output localIssuerUrl)}"
+issuer="${LAB_ISSUER_URL:?Set LAB_ISSUER_URL in .lab.env (output issuerUrl of the kind stack)}"
 issuer="${issuer%/}"
 context="kind-aks-lab"
 
@@ -31,4 +31,4 @@ fi
 
 kubectl --context "$context" get nodes
 
-"$root/scripts/local-bootstrap.sh"
+"$root/scripts/argocd-bootstrap.sh" local "$context"
