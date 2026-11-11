@@ -484,3 +484,9 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   and the managed identity kept. `GET /graph` returns 502 `Graph call failed: HTTPStatusError`, and the log shows `403
   Forbidden` from `GET /v1.0/organization`. The token request succeeded, so the kind federated credential (issuer,
   subject, audience) works. Only the Graph permission is missing.
+- Test B on kind (check 11, `local`), after the owner granted admin consent: the pod keeps the managed identity
+  (`AZURE_CLIENT_ID`) and sets `GRAPH_CLIENT_ID`. `GET /config` returns `secret: resolved`. `GET /graph` returns
+  `credential: workload_identity`, `client_id: 35fc1cca-944b-4519-9822-f1de2e1c422e` and `graph: ok`.
+- Surprise: the same pod kept returning 403 for about 50 minutes after consent. The api builds the Graph credential once
+  and the SDK caches the token, so a token issued before consent has no `Organization.Read.All` role and stays valid for
+  about an hour. A pod restart fixed it. After a consent change, restart the pod.
