@@ -43,6 +43,10 @@ spec:
               value: {{ .Values.config.refreshSeconds | quote }}
             - name: INDEXER_URL
               value: {{ .Values.config.indexerUrl | quote }}
+            {{- with .Values.config.graphClientId }}
+            - name: GRAPH_CLIENT_ID
+              value: {{ . | quote }}
+            {{- end }}
             {{- if .Values.identity.projectedToken }}
             - name: AZURE_CLIENT_ID
               value: {{ required "identity.clientId is required" .Values.identity.clientId | quote }}

@@ -11,6 +11,7 @@ config:
   label: ""               # required: App Configuration label, one per environment
   refreshSeconds: 30
   indexerUrl: http://indexer:8080
+  graphClientId: ""       # optional: app registration that GET /graph uses. Empty: the pod identity.
 
 # Entra workload identity. The AKS webhook injects the token and AZURE_* variables.
 identity:
