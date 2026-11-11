@@ -11,7 +11,7 @@ spec:
   sources:
     - repoURL: acrlabyntm5u.azurecr.io/charts
       chart: api
-      targetRevision: 0.2.2
+      targetRevision: 0.3.0
       helm:
         valueFiles: [$values/gitops/envs/local/api.yaml]
     - repoURL: ssh://git@ssh.github.com:443/giorgos-stefanakis/aks-lab.git
