@@ -23,6 +23,9 @@ param ownerObjectId string
 @description('GitHub repository as owner@ownerId/name@repoId, the form GitHub puts in OIDC subjects.')
 param githubRepository string
 
+@description('Object ID of the service principal of app-lab-api. Empty: it gets no roles. The Graph deployment creates it.')
+param apiAppServicePrincipalId string = ''
+
 var tags = { purpose: 'lab' }
 
 module acr 'modules/acr.bicep' = {
@@ -58,6 +61,16 @@ module identities 'modules/identities.bicep' = {
     location: location
     tags: tags
     acrName: acr.outputs.name
+    appConfigName: appConfig.outputs.name
+    keyVaultName: keyVault.outputs.name
+    openAiName: openAi.outputs.name
+  }
+}
+
+module apiApp 'modules/api-app-roles.bicep' = if (!empty(apiAppServicePrincipalId)) {
+  name: 'api-app-roles'
+  params: {
+    principalId: apiAppServicePrincipalId
     appConfigName: appConfig.outputs.name
     keyVaultName: keyVault.outputs.name
     openAiName: openAi.outputs.name

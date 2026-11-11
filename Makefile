@@ -6,7 +6,7 @@ HELM ?= helm
 ISSUER_URL = $(patsubst %/,%,$(LAB_ISSUER_URL))
 
 -include .lab.env
-export LAB_TENANT_ID LAB_SUBSCRIPTION_ID LAB_LOCATION LAB_RESOURCE_GROUP LAB_BUDGET_EMAIL LAB_OWNER_OBJECT_ID LAB_ISSUER_URL LAB_AKS_NODE_COUNT
+export LAB_TENANT_ID LAB_SUBSCRIPTION_ID LAB_LOCATION LAB_RESOURCE_GROUP LAB_BUDGET_EMAIL LAB_OWNER_OBJECT_ID LAB_ISSUER_URL LAB_AKS_ISSUER_URL LAB_API_APP_SP_ID LAB_AKS_NODE_COUNT
 
 DEPLOY_ARGS = --subscription $(LAB_SUBSCRIPTION_ID) --location $(LAB_LOCATION) --name main \
 	--template-file infra/main.bicep --parameters infra/params/lab.bicepparam
@@ -121,6 +121,10 @@ _lint-infra:
 		az bicep lint --file infra/main.bicep
 	LAB_BUDGET_EMAIL=$${LAB_BUDGET_EMAIL:-lint@example.invalid} LAB_OWNER_OBJECT_ID=$${LAB_OWNER_OBJECT_ID:-00000000-0000-0000-0000-000000000000} \
 		az bicep build-params --file infra/params/lab.bicepparam --stdout > /dev/null
+	LAB_ISSUER_URL=$${LAB_ISSUER_URL:-https://lint.example.invalid/oidc} \
+		az bicep lint --file infra/app-registration.bicep
+	LAB_ISSUER_URL=$${LAB_ISSUER_URL:-https://lint.example.invalid/oidc} \
+		az bicep build-params --file infra/params/app-registration.bicepparam --stdout > /dev/null
 	@for c in kind aks; do \
 		az bicep lint --file infra/clusters/$$c.bicep && \
 		LAB_OWNER_OBJECT_ID=$${LAB_OWNER_OBJECT_ID:-00000000-0000-0000-0000-000000000000} \

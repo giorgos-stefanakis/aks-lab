@@ -18,6 +18,9 @@ param ownerObjectId string
 @description('GitHub repository as owner@ownerId/name@repoId, the form GitHub puts in OIDC subjects.')
 param githubRepository string
 
+@description('Object ID of the service principal of app-lab-api. Empty: it gets no roles.')
+param apiAppServicePrincipalId string = ''
+
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: resourceGroupName
   location: location
@@ -36,6 +39,7 @@ module resources 'resources.bicep' = {
     budgetStart: budgetStart
     ownerObjectId: ownerObjectId
     githubRepository: githubRepository
+    apiAppServicePrincipalId: apiAppServicePrincipalId
   }
 }
 
