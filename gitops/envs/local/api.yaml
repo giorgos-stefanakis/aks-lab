@@ -3,6 +3,7 @@ image:
 config:
   appConfigEndpoint: https://appcs-lab-yntm5u.azconfig.io
   label: local
+  graphClientId: "35fc1cca-944b-4519-9822-f1de2e1c422e"
 identity:
   clientId: "296251e2-0446-4aeb-8b7f-65b7d6012b38"
   tenantId: "9e0b74a8-2a7c-43ae-8b92-e05e1e520a7f"
