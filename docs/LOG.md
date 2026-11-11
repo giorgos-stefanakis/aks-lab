@@ -490,3 +490,16 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
 - Surprise: the same pod kept returning 403 for about 50 minutes after consent. The api builds the Graph credential once
   and the SDK caches the token, so a token issued before consent has no `Organization.Read.All` role and stays valid for
   about an hour. A pod restart fixed it. After a consent change, restart the pod.
+- Test A on kind (check 10, `local`): `identity.clientId` names the registration and `graphClientId` is unset, so the
+  default chain signs in as the registration. `GET /config` returns `secret: resolved`, `POST /chat` returns an answer,
+  and `GET /graph` returns `credential: default`, `client_id: 35fc1cca-944b-4519-9822-f1de2e1c422e` and `graph: ok`.
+  The registration holds no secret and no certificate. Federation and the three role assignments carry the sign-in.
+- Test A on AKS (check 10, `aks-dev`): same result as on kind. `GET /config` returns `secret: resolved`, `POST /chat`
+  returns an answer, and `GET /graph` returns `credential: default`, `client_id: 35fc1cca-944b-4519-9822-f1de2e1c422e`
+  and `graph: ok`. The owner deleted the pod after the sync, because the webhook reads the service-account annotation at
+  pod start.
+- Failure seen on AKS: the first pod crash-looped with `AADSTS700211: No matching federated identity record found`. The
+  AKS federated credential had been deployed with the issuer without its trailing slash, while the cluster signs tokens
+  with it. Entra compares the issuer exactly. The owner fixed the credential in the portal and the pod recovered. While
+  the exchange fails, the api cannot load its configuration, so it never listens and the liveness probe restarts it.
+  `LAB_AKS_ISSUER_URL` now ends with `/`, so a redeploy keeps the fix.
