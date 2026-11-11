@@ -476,3 +476,11 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   yet. The `az ad` commands take no `--subscription`, so `guard-bash` blocks them and the owner runs them.
 - The kind `api` runs chart and image `0.2.2`, which have no `/graph` and no `graphClientId`. Argo CD self-heals the
   Deployment. M9 tests on kind need a release first.
+- Release v0.3.0 reached kind: the `api` pod runs `0.3.0`. Failure case 3 (T-099), `GET /graph` on a managed-identity
+  pod with `GRAPH_CLIENT_ID` unset: the response is 502 `Graph call failed: HTTPStatusError`. The log shows `403
+  Forbidden` from `GET /v1.0/organization`. The token request succeeds and Graph refuses it, because the managed
+  identity holds no Graph role.
+- Failure case 1 (T-099), Graph call before admin consent: kind with `config.graphClientId` set to the registration
+  and the managed identity kept. `GET /graph` returns 502 `Graph call failed: HTTPStatusError`, and the log shows `403
+  Forbidden` from `GET /v1.0/organization`. The token request succeeded, so the kind federated credential (issuer,
+  subject, audience) works. Only the Graph permission is missing.
