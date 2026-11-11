@@ -20,6 +20,7 @@ Tasks live in [TASKS.md](TASKS.md).
 | M6 | AKS | Acceptance checks 2 to 5 and 7 pass on AKS. | Owner deploys AKS |
 | M7 | Public ingress | Acceptance check 8 passes. | None beyond M6 |
 | M8 | Demo | `docs/DEMO.md` walks through the checks. Check 9 passes. | Owner tears down |
+| M9 | App registration path | Acceptance checks 10 to 12 pass. Run the check 9 teardown after M9, so that it covers the registration. | Owner deploys the registration and grants consent |
 
 ## Repository layout
 
@@ -46,8 +47,9 @@ aks-lab/
 
 If time runs out, drop work in this order:
 
-1. M8 polish. Demo from the acceptance checks instead.
-2. M7. Use `kubectl port-forward` on AKS.
+1. M9. It extends the lab and is not part of the core claim.
+2. M8 polish. Demo from the acceptance checks instead.
+3. M7. Use `kubectl port-forward` on AKS.
 
 ## Open points
 

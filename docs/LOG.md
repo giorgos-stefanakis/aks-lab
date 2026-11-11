@@ -468,3 +468,11 @@ Verified findings, newest last. Never edit an old entry; add a new one that corr
   The issuer is `Let's Encrypt` CN=YR1 and the certificate expires 2027-02-08. Staging certificates do not satisfy the
   browser, so the staging step cost one extra commit. This closes T-070 and M7.
 - kind recovered after the repo URL moved to `ssh.github.com:443`: all seven Applications are `Synced` and `Healthy`.
+
+## M9: app registration path
+
+- The owner deployed the draft `infra/app-registration.bicep`. The tenant lists one application `app-lab-api` with
+  client ID `35fc1cca-944b-4519-9822-f1de2e1c422e`. The draft requests no Graph permission, so no consent step exists
+  yet. The `az ad` commands take no `--subscription`, so `guard-bash` blocks them and the owner runs them.
+- The kind `api` runs chart and image `0.2.2`, which have no `/graph` and no `graphClientId`. Argo CD self-heals the
+  Deployment. M9 tests on kind need a release first.

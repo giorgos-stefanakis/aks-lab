@@ -14,6 +14,8 @@ Show that a Python platform can run on Kubernetes with Azure as its control plan
 - Images and charts are built once by CI and stored in ACR.
 - Pods reach App Configuration, Key Vault and Azure OpenAI with an Entra identity, without stored keys on AKS.
 - The same charts and the same Gateway API routes run on a local kind cluster and on AKS.
+- An Entra app registration with a federated credential replaces a managed identity for a workload. A pod can use
+  both at once: the managed identity for Azure resources and the registration for Microsoft Graph.
 
 ## Non-goals
 
@@ -24,6 +26,7 @@ Show that a Python platform can run on Kubernetes with Azure as its control plan
 - A secrets operator (External Secrets Operator or the Secrets Store CSI driver).
 - Mirroring for air-gapped clusters.
 - User sign-in.
+- Microsoft 365 services such as SharePoint. The Graph probe reads organisation data only.
 
 ## Workloads
 
@@ -36,6 +39,11 @@ Show that a Python platform can run on Kubernetes with Azure as its control plan
 | `GET /config` | Shows non-secret settings, their App Configuration label, the feature flag state, and whether the Key Vault secret resolved. Never shows the secret value. |
 | `POST /chat` | Sends a prompt to Azure OpenAI. The endpoint and deployment name come from App Configuration. |
 | `POST /index` | Forwards a document to the indexer and returns its result. |
+| `GET /graph` | Calls Microsoft Graph `GET /organization`. Returns the credential kind (`default` or `workload-identity`), the `appid` or `azp` claim of the token it used, and `graph: ok`. Returns 502 with the error class on failure. Never returns a token or tenant data. |
+
+`GRAPH_CLIENT_ID` is an optional environment variable. When it is unset, every Azure call uses the default credential
+chain. When it is set, `GET /graph` uses a workload identity credential for that client ID. The other calls stay on
+the default chain.
 
 **indexer**: an Azure Functions app (Python v2 model) on the Functions base image, run as a Deployment.
 
@@ -62,7 +70,7 @@ All resources sit in one resource group, tagged `purpose=lab`.
 | Azure OpenAI, one model deployment | External AI dependency |
 | User-assigned managed identities | `api`, `indexer`, `argocd`, `github` |
 | Federated identity credentials | AKS service accounts and GitHub Actions |
-| Entra app registration with a service principal | Local cluster only, because kind has no workload identity |
+| Entra app registration `app-lab-api` with a service principal and federated credentials | M9. Tests the app registration path. No client secret and no certificate. Holds the roles of the `api` identity and the Graph application permission `Organization.Read.All`. |
 | AKS, Free tier, 3 small nodes | Cloud cluster with the OIDC issuer, workload identity, managed Gateway API CRDs and app routing Istio |
 | Static public IP with a DNS label | Public hostname for the AKS gateway |
 | Budget with an email alert | Cost guard on the resource group |
@@ -110,3 +118,10 @@ All resources sit in one resource group, tagged `purpose=lab`.
 7. On AKS, no workload has a stored Azure credential. `GET /config` still works.
 8. On AKS, `https://<host>/healthz` returns 200 with a publicly trusted certificate.
 9. `make local-down` and `make aks-down` remove everything they created.
+10. Test A, identity swap. On both clusters, `identity.clientId` of the api names the app registration.
+    `GET /config` shows `secret: resolved`, and `GET /graph` returns that client ID with `graph: ok`.
+    The registration has no client secret and no certificate.
+11. Test B, dual identity. On both clusters, the api keeps the managed identity and `GRAPH_CLIENT_ID` names the
+    registration. In one pod, `GET /config` resolves through the managed identity, and `GET /graph` calls Graph as
+    the registration.
+12. The documented teardown removes the app registration. The Entra portal lists no `app-lab-api` afterwards.
